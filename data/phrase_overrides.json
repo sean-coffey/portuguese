@@ -1,0 +1,35 @@
+{
+  "estou com saudades.": {
+    "gloss_en": "I miss someone.",
+    "visual_type": "abstract",
+    "teacher_review": true,
+    "scene": {
+      "subject": "person",
+      "action": null,
+      "object": null,
+      "setting": "simple indoor setting"
+    }
+  },
+  "dar uma mão.": {
+    "gloss_en": "To help.",
+    "visual_type": "idiomatic",
+    "teacher_review": true,
+    "scene": {
+      "subject": "one person",
+      "action": "helping",
+      "object": "another person",
+      "setting": "simple everyday setting"
+    }
+  },
+  "ele está triste.": {
+    "gloss_en": "He is sad.",
+    "visual_type": "abstract",
+    "teacher_review": false,
+    "scene": {
+      "subject": "boy",
+      "action": null,
+      "object": null,
+      "setting": "bedroom"
+    }
+  }
+}
