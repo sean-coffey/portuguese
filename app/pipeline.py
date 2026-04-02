@@ -23,14 +23,14 @@ def process_document(input_path: str, output_filename: str = "result.docx", stat
     # -------------------------
     # 1. Extract phrases
     # -------------------------
-    update_status(status_path, progress=5, message="Parsing document")
+    update_status(status_path, progress=5, message="A analisar o documento...")
 
     phrases = extract_phrases_from_docx(input_path)
 
     # -------------------------
     # 2. Analyze phrases
     # -------------------------
-    update_status(status_path, progress=10, message="Analyzing phrases")
+    update_status(status_path, progress=10, message="A analisar as frases...")
 
     items = []
 
@@ -66,7 +66,7 @@ def process_document(input_path: str, output_filename: str = "result.docx", stat
     total = len(items)
     completed = 0
 
-    update_status(status_path, progress=20, message="Generating images...")
+    update_status(status_path, progress=20, message="A gerar imagens...")
 
     def image_task(item):
         return generate_image(
@@ -85,7 +85,7 @@ def process_document(input_path: str, output_filename: str = "result.docx", stat
             try:
                 item.image_path = future.result()
             except Exception as e:
-                print(f"Image failed for {item.original}: {e}")
+                print(f"Falha na imagem para {item.original}: {e}")
                 item.image_path = None  # or fallback
 
             completed += 1
@@ -95,18 +95,18 @@ def process_document(input_path: str, output_filename: str = "result.docx", stat
             update_status(
                 status_path,
                 progress=progress,
-                message=f"Generating images ({completed}/{total})"
+                message=f"A gerar imagens ({completed}/{total})"
             )
 
     # -------------------------
     # 4. Build document
     # -------------------------
-    update_status(status_path, progress=85, message="Building document")
+    update_status(status_path, progress=85, message="A criar a ficha...")
 
     output_path = os.path.join(os.path.dirname(input_path), output_filename)
 
     build_docx(items, output_path)
 
-    update_status(status_path, progress=100, message="Done")
+    update_status(status_path, progress=100, message="Concluido!")
 
     return output_path

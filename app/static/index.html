@@ -1,102 +1,298 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Portuguese Worksheet Generator</title>
+    <title>Sara Guimarães Aulas de Português</title>
     <style>
+        :root {
+            --navy: #1f2b4d;
+            --gold: #d9a441;
+            --gold-soft: #f3e2b8;
+            --cream: #fffaf2;
+            --card: rgba(255, 255, 255, 0.9);
+            --text: #24304a;
+            --muted: #6f7790;
+            --green: #4caf50;
+            --green-soft: #dff3e3;
+            --border: rgba(31, 43, 77, 0.12);
+            --shadow: 0 18px 40px rgba(31, 43, 77, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: system-ui;
-            background: #f5f7fb;
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Avenir Next", "Nunito", "Trebuchet MS", Arial, sans-serif;
+            color: var(--text);
+            background-image: url("/static/background.png");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .overlay {
+            min-height: 100vh;
+            background: rgba(255, 250, 242, 0.76);
+            backdrop-filter: blur(7px);
             display: flex;
             justify-content: center;
-            margin-top: 80px;
+            align-items: center;
+            padding: 32px 20px;
+        }
+
+        .shell {
+            width: 100%;
+            max-width: 760px;
+        }
+
+        .brand {
+            text-align: center;
+            margin-bottom: 22px;
+        }
+
+        .brand img {
+            width: 140px;
+            max-width: 100%;
+            display: block;
+            margin: 0 auto 8px auto;
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: 2rem;
+            color: var(--navy);
+            font-weight: 800;
+            letter-spacing: 0.3px;
+        }
+
+        .brand p {
+            margin: 6px 0 0 0;
+            color: var(--gold);
+            font-weight: 700;
+            letter-spacing: 1.4px;
+            text-transform: uppercase;
+            font-size: 0.92rem;
         }
 
         .card {
-            background: white;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
             padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            width: 400px;
+        }
+
+        .intro {
             text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .intro h2 {
+            margin: 0 0 8px 0;
+            color: var(--navy);
+            font-size: 1.35rem;
+        }
+
+        .intro p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.5;
         }
 
         .dropzone {
-            border: 2px dashed #aaa;
-            padding: 30px;
-            border-radius: 10px;
+            border: 2px dashed var(--gold);
+            background: rgba(255, 250, 242, 0.92);
+            border-radius: 20px;
+            padding: 34px 20px;
             cursor: pointer;
+            transition: 0.2s ease;
+            text-align: center;
         }
 
+        .dropzone:hover,
         .dropzone.dragover {
-            border-color: #4CAF50;
-            background: #f0fff4;
+            background: #fff6e7;
+            border-color: #c99224;
+            transform: translateY(-1px);
+        }
+
+        .dropzone-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 8px;
+        }
+
+        .dropzone-subtitle {
+            font-size: 0.95rem;
+            color: var(--muted);
+        }
+
+        .actions {
+            margin-top: 22px;
+            display: flex;
+            justify-content: center;
         }
 
         button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            background: #4CAF50;
+            padding: 12px 22px;
+            background: var(--navy);
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 999px;
             cursor: pointer;
+            font-size: 1rem;
+            font-weight: 700;
+            box-shadow: 0 10px 20px rgba(31, 43, 77, 0.16);
+            transition: 0.2s ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            background: #17203a;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-wrap {
+            margin-top: 24px;
+        }
+
+        .progress-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.92rem;
+            color: var(--muted);
         }
 
         .progress-bar {
-            height: 10px;
-            background: #eee;
-            border-radius: 5px;
-            margin-top: 20px;
+            width: 100%;
+            height: 12px;
+            background: #efe7d7;
+            border-radius: 999px;
+            overflow: hidden;
         }
 
         .progress-fill {
             height: 100%;
             width: 0%;
-            background: #4CAF50;
-            border-radius: 5px;
+            background: linear-gradient(90deg, var(--gold), var(--green));
+            border-radius: 999px;
+            transition: width 0.35s ease;
         }
 
-        #download {
+        .status {
+            margin-top: 14px;
+            min-height: 24px;
+            text-align: center;
+            color: var(--navy);
+            font-weight: 600;
+        }
+
+        .download-wrap {
+            margin-top: 22px;
+            text-align: center;
+        }
+
+        .download-link {
             display: none;
-            margin-top: 20px;
-            color: #4CAF50;
-            font-weight: bold;
+            text-decoration: none;
+            background: var(--green);
+            color: white;
+            padding: 12px 22px;
+            border-radius: 999px;
+            font-weight: 700;
+            box-shadow: 0 10px 20px rgba(76, 175, 80, 0.2);
+        }
+
+        .download-link:hover {
+            background: #429a47;
+        }
+
+        .footer-note {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 0.84rem;
+            color: var(--muted);
         }
     </style>
 </head>
 <body>
+<div class="overlay">
+    <div class="shell">
+        <div class="brand">
+            <img src="/static/logo.png" alt="Sara Guimarães Portuguese Lessons logo">
+            <h1>Sara Guimarães</h1>
+            <p>Aulas de Português</p>
+        </div>
 
-<div class="card">
-    <h2>Portuguese Worksheet Generator</h2>
+        <div class="card">
+            <div class="intro">
+                <h2>Gerador de Fichas</h2>
+                <p>Carregue um documento Word com palavras ou frases em português<br> para gerar uma ficha ilustrada.</p>
+            </div>
 
-    <div class="dropzone" id="dropzone">
-        Drop your .docx here<br>or click to upload
+            <div class="dropzone" id="dropzone">
+                <div class="dropzone-title" id="dropzoneTitle">Arraste o ficheiro .docx para aqui</div>
+                <div class="dropzone-subtitle">ou clique para selecionar</div>
+            </div>
+
+            <input type="file" id="fileInput" hidden accept=".docx">
+
+            <div class="actions">
+                <button id="generateBtn" onclick="upload()">Gerar Ficha</button>
+            </div>
+
+            <div class="progress-wrap">
+                <div class="progress-meta">
+                    <span>Progresso</span>
+                    <span id="progressText">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+
+            <div class="status" id="status">Pronto</div>
+
+            <div class="download-wrap">
+                <a class="download-link" id="download">Descarregar Ficha</a>
+            </div>
+
+            <div class="footer-note">
+                Imagens geradas por IA para uso educativo.
+            </div>
+        </div>
     </div>
-
-    <input type="file" id="fileInput" hidden accept=".docx">
-
-    <button onclick="upload()">Generate Worksheet</button>
-
-    <div class="progress-bar">
-        <div class="progress-fill" id="progressFill"></div>
-    </div>
-
-    <div id="status"></div>
-
-    <a id="download">Download Worksheet</a>
 </div>
 
 <script>
 let selectedFile = null;
 
 const dropzone = document.getElementById("dropzone");
+const dropzoneTitle = document.getElementById("dropzoneTitle");
 const fileInput = document.getElementById("fileInput");
+const generateBtn = document.getElementById("generateBtn");
+const statusEl = document.getElementById("status");
+const progressFill = document.getElementById("progressFill");
+const progressText = document.getElementById("progressText");
+const download = document.getElementById("download");
 
 dropzone.onclick = () => fileInput.click();
 
 fileInput.onchange = () => {
     selectedFile = fileInput.files[0];
-    dropzone.innerText = selectedFile.name;
+    if (selectedFile) {
+        dropzoneTitle.innerText = selectedFile.name;
+    }
 };
 
 dropzone.ondragover = (e) => {
@@ -110,22 +306,27 @@ dropzone.ondragleave = () => {
 
 dropzone.ondrop = (e) => {
     e.preventDefault();
-    selectedFile = e.dataTransfer.files[0];
-    dropzone.innerText = selectedFile.name;
     dropzone.classList.remove("dragover");
+    selectedFile = e.dataTransfer.files[0];
+    if (selectedFile) {
+        dropzoneTitle.innerText = selectedFile.name;
+    }
 };
 
 async function upload() {
     if (!selectedFile) {
-        alert("Select a file first");
+        alert("Por favor selecione um ficheiro .docx.");
         return;
     }
 
     const formData = new FormData();
     formData.append("file", selectedFile);
 
-    document.getElementById("status").innerText = "Uploading...";
-    document.getElementById("download").style.display = "none";
+    generateBtn.disabled = true;
+    progressFill.style.width = "0%";
+    progressText.innerText = "0%";
+    statusEl.innerText = "A iniciar...";
+    download.style.display = "none";
 
     const res = await fetch("/upload", {
         method: "POST",
@@ -133,38 +334,40 @@ async function upload() {
     });
 
     const data = await res.json();
-
     pollStatus(data.job_id);
 }
 
 async function pollStatus(job_id) {
-    const statusEl = document.getElementById("status");
-    const progressFill = document.getElementById("progressFill");
-    const download = document.getElementById("download");
-
     const interval = setInterval(async () => {
         const res = await fetch(`/status/${job_id}`);
         const data = await res.json();
 
         if (data.progress !== undefined) {
             progressFill.style.width = data.progress + "%";
+            progressText.innerText = data.progress + "%";
+        }
+
+        if (data.message) {
+            statusEl.innerText = data.message;
         }
 
         if (data.status === "completed") {
             clearInterval(interval);
-            statusEl.innerText = "Done!";
+            statusEl.innerText = "Concluido!";
+            progressFill.style.width = "100%";
+            progressText.innerText = "100%";
             download.href = `/download/${job_id}`;
-            download.style.display = "block";
+            download.style.display = "inline-block";
+            generateBtn.disabled = false;
         }
 
         if (data.status === "failed") {
             clearInterval(interval);
-            statusEl.innerText = "Error: " + data.error;
+            statusEl.innerText = "Erro: " + data.error;
+            generateBtn.disabled = false;
         }
-
     }, 1000);
 }
 </script>
-
 </body>
 </html>
