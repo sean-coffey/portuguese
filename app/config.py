@@ -1,20 +1,24 @@
 import os
+from pathlib import Path
+from dotenv import load_dotenv
 
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
 
-INPUT_DIR = os.path.join(BASE_DIR, "input")
-OUTPUT_DIR = os.path.join(BASE_DIR, "output")
-IMAGE_DIR = os.path.join(BASE_DIR, "images")
-DATA_DIR = os.path.join(BASE_DIR, "data")
-TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
+APP_ENV = os.getenv("APP_ENV", "local")
 
-REFERENCE_ASSETS_DIR = os.path.join(BASE_DIR, "reference_assets")
-PROMPTS_DIR = os.path.join(BASE_DIR, "prompts")
-STYLE_GUIDE_PATH = os.path.join(PROMPTS_DIR, "style_guide.txt")
+INPUT_DIR = BASE_DIR / "input"
+OUTPUT_DIR = BASE_DIR / "output"
+IMAGE_DIR = BASE_DIR / "images"
+DATA_DIR = BASE_DIR / "data"
+TEMPLATES_DIR = BASE_DIR / "templates"
 
-os.makedirs(INPUT_DIR, exist_ok=True)
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-os.makedirs(IMAGE_DIR, exist_ok=True)
-os.makedirs(DATA_DIR, exist_ok=True)
-os.makedirs(REFERENCE_ASSETS_DIR, exist_ok=True)
-os.makedirs(PROMPTS_DIR, exist_ok=True)
+REFERENCE_ASSETS_DIR = BASE_DIR / "reference_assets"
+PROMPTS_DIR = BASE_DIR / "prompts"
+STYLE_GUIDE_PATH = PROMPTS_DIR / "style_guide.txt"
+
+S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
+AWS_REGION = os.getenv("AWS_REGION", "eu-west-1")
+
+for folder in [INPUT_DIR, OUTPUT_DIR, IMAGE_DIR, DATA_DIR, TEMPLATES_DIR, REFERENCE_ASSETS_DIR, PROMPTS_DIR]:
+    folder.mkdir(parents=True, exist_ok=True)

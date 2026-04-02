@@ -5,4 +5,5 @@ openai
 fastapi
 uvicorn
 python-multipart
-dotenv
+python-dotenv
+boto3
