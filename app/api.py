@@ -112,3 +112,8 @@ def get_status(job_id: str):
 
     with open(status_path) as f:
         return json.load(f)
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
