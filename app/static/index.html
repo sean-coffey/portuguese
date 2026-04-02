@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Portuguese Worksheet Generator</title>
+    <style>
+        body {
+            font-family: system-ui;
+            background: #f5f7fb;
+            display: flex;
+            justify-content: center;
+            margin-top: 80px;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 400px;
+            text-align: center;
+        }
+
+        .dropzone {
+            border: 2px dashed #aaa;
+            padding: 30px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .dropzone.dragover {
+            border-color: #4CAF50;
+            background: #f0fff4;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: #eee;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: #4CAF50;
+            border-radius: 5px;
+        }
+
+        #download {
+            display: none;
+            margin-top: 20px;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Portuguese Worksheet Generator</h2>
+
+    <div class="dropzone" id="dropzone">
+        Drop your .docx here<br>or click to upload
+    </div>
+
+    <input type="file" id="fileInput" hidden accept=".docx">
+
+    <button onclick="upload()">Generate Worksheet</button>
+
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <div id="status"></div>
+
+    <a id="download">Download Worksheet</a>
+</div>
+
+<script>
+let selectedFile = null;
+
+const dropzone = document.getElementById("dropzone");
+const fileInput = document.getElementById("fileInput");
+
+dropzone.onclick = () => fileInput.click();
+
+fileInput.onchange = () => {
+    selectedFile = fileInput.files[0];
+    dropzone.innerText = selectedFile.name;
+};
+
+dropzone.ondragover = (e) => {
+    e.preventDefault();
+    dropzone.classList.add("dragover");
+};
+
+dropzone.ondragleave = () => {
+    dropzone.classList.remove("dragover");
+};
+
+dropzone.ondrop = (e) => {
+    e.preventDefault();
+    selectedFile = e.dataTransfer.files[0];
+    dropzone.innerText = selectedFile.name;
+    dropzone.classList.remove("dragover");
+};
+
+async function upload() {
+    if (!selectedFile) {
+        alert("Select a file first");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+
+    document.getElementById("status").innerText = "Uploading...";
+    document.getElementById("download").style.display = "none";
+
+    const res = await fetch("/upload", {
+        method: "POST",
+        body: formData
+    });
+
+    const data = await res.json();
+
+    pollStatus(data.job_id);
+}
+
+async function pollStatus(job_id) {
+    const statusEl = document.getElementById("status");
+    const progressFill = document.getElementById("progressFill");
+    const download = document.getElementById("download");
+
+    const interval = setInterval(async () => {
+        const res = await fetch(`/status/${job_id}`);
+        const data = await res.json();
+
+        if (data.progress !== undefined) {
+            progressFill.style.width = data.progress + "%";
+        }
+
+        if (data.status === "completed") {
+            clearInterval(interval);
+            statusEl.innerText = "Done!";
+            download.href = `/download/${job_id}`;
+            download.style.display = "block";
+        }
+
+        if (data.status === "failed") {
+            clearInterval(interval);
+            statusEl.innerText = "Error: " + data.error;
+        }
+
+    }, 1000);
+}
+</script>
+
+</body>
+</html>

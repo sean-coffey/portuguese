@@ -10,11 +10,16 @@ load_dotenv()
 
 from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+
 
 from app.pipeline import process_document
+from app.jobs.utils import update_status
 from app.config import BASE_DIR
 
 app = FastAPI()
+
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 JOBS_DIR = os.path.join(BASE_DIR, "data", "jobs")
 os.makedirs(JOBS_DIR, exist_ok=True)
@@ -27,53 +32,54 @@ def create_job_dir():
     return job_id, job_dir
 
 
+def process_job(input_path, output_path, status_path):
+
+    try:
+        update_status(status_path, status="processing", progress=0, message="Parsing document")
+
+        process_document(
+            input_path=input_path,
+            output_filename=os.path.basename(output_path),
+            status_path=status_path   # 👈 NEW
+        )
+
+        update_status(status_path, status="completed", progress=100, message="Done")
+
+    except Exception as e:
+        update_status(status_path, status="failed", message=str(e))
+
+@app.get("/")
+def serve_ui():
+    return FileResponse("app/static/index.html")
+
+
 # ---------------------------
 # Upload + process
 # ---------------------------
 @app.post("/upload")
 async def upload(file: UploadFile = File(...)):
-    if not file.filename.endswith(".docx"):
-        return JSONResponse(
-            status_code=400,
-            content={"error": "Only .docx files are supported"}
-        )
-
     job_id, job_dir = create_job_dir()
 
     input_path = os.path.join(job_dir, "input.docx")
     output_path = os.path.join(job_dir, "output.docx")
 
-    # Save uploaded file
     with open(input_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
 
-    original_name = file.filename
+    # create initial status file
+    status_path = os.path.join(job_dir, "status.json")
+    with open(status_path, "w") as f:
+        json.dump({"status": "processing", "progress": 0}, f)
 
-    with open(os.path.join(job_dir, "meta.json"), "w") as f:
-        json.dump({"original_filename": original_name}, f)
+    # run in background (simple version)
+    import threading
+    threading.Thread(
+        target=process_job,
+        args=(input_path, output_path, status_path),
+        daemon=True
+    ).start()
 
-    try:
-        # 🔥 Use your existing pipeline (no changes needed)
-        process_document(
-            input_path=input_path,
-            output_filename=os.path.basename(output_path)
-        )
-
-        return {
-            "job_id": job_id,
-            "status": "completed",
-            "download_url": f"/download/{job_id}"
-        }
-
-    except Exception as e:
-        return JSONResponse(
-            status_code=500,
-            content={
-                "job_id": job_id,
-                "status": "failed",
-                "error": str(e)
-            }
-        )
+    return {"job_id": job_id}
 
 
 # ---------------------------
@@ -96,3 +102,13 @@ def download(job_id: str):
         filename="worksheet.docx"
     )
 
+
+@app.get("/status/{job_id}")
+def get_status(job_id: str):
+    status_path = os.path.join(JOBS_DIR, job_id, "status.json")
+
+    if not os.path.exists(status_path):
+        return {"status": "not_found"}
+
+    with open(status_path) as f:
+        return json.load(f)
