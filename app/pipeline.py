@@ -6,7 +6,7 @@ from app.image_generator import generate_image
 from app.doc_builder import build_docx
 from app.overrides import get_phrase_override
 from app.models import PhraseItem, Scene
-
+import os
 
 def process_document(input_path: str, output_filename: str = "result.docx"):
     phrases = extract_phrases_from_docx(input_path)
@@ -43,16 +43,16 @@ def process_document(input_path: str, output_filename: str = "result.docx"):
 
         final_prompt = build_image_prompt(analysis)
 
-        print(f"  Final prompt: {final_prompt}")
-
         analysis.final_image_prompt = final_prompt
 
         try:
             image_path = generate_image(
+                phrase=analysis.normalized,
                 scene_prompt=analysis.final_image_prompt,
                 image_id=analysis.id,
                 character_description=CHARACTER_DESCRIPTION,
             )
+
             analysis.image_path = image_path
             items.append(analysis)
         except Exception as e:
@@ -61,5 +61,6 @@ def process_document(input_path: str, output_filename: str = "result.docx"):
     if not items:
         raise RuntimeError("No worksheet items were generated successfully.")
 
-    output_path = build_docx(items, filename=output_filename)
+    output_path = os.path.join(os.path.dirname(input_path), output_filename)
+    build_docx(items, output_path)
     return output_path

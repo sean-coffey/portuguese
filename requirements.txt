@@ -2,3 +2,7 @@ python-docx
 pillow
 pydantic
 openai
+fastapi
+uvicorn
+python-multipart
+dotenv

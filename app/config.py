@@ -6,6 +6,7 @@ INPUT_DIR = os.path.join(BASE_DIR, "input")
 OUTPUT_DIR = os.path.join(BASE_DIR, "output")
 IMAGE_DIR = os.path.join(BASE_DIR, "images")
 DATA_DIR = os.path.join(BASE_DIR, "data")
+TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
 
 REFERENCE_ASSETS_DIR = os.path.join(BASE_DIR, "reference_assets")
 PROMPTS_DIR = os.path.join(BASE_DIR, "prompts")
