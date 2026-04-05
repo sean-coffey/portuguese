@@ -1,21 +1,25 @@
 # app/jobs/utils.py
 import json
 
-def update_status(status_path, status=None, progress=None, message=None):
+
+def update_status(status_path, status=None, progress=None, message=None, extra=None):
     data = {}
 
     try:
-        with open(status_path) as f:
+        with open(status_path, "r", encoding="utf-8") as f:
             data = json.load(f)
-    except:
+    except Exception:
         pass
 
-    if status:
+    if status is not None:
         data["status"] = status
     if progress is not None:
         data["progress"] = progress
-    if message:
+    if message is not None:
         data["message"] = message
 
-    with open(status_path, "w") as f:
+    if extra:
+        data.update(extra)
+
+    with open(status_path, "w", encoding="utf-8") as f:
         json.dump(data, f)

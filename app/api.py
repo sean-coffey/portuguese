@@ -16,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from app.pipeline import process_document
 from app.jobs.utils import update_status
 from app.config import BASE_DIR
+from app.storage import use_s3, upload_file_to_s3, generate_download_url
 
 app = FastAPI()
 
@@ -33,20 +34,37 @@ def create_job_dir():
 
 
 def process_job(input_path, output_path, status_path):
-
     try:
-        update_status(status_path, status="processing", progress=0, message="Parsing document")
+        update_status(status_path, status="processing", progress=0, message="A iniciar...")
 
-        process_document(
+        local_output_path = process_document(
             input_path=input_path,
             output_filename=os.path.basename(output_path),
-            status_path=status_path   # 👈 NEW
+            status_path=status_path
         )
 
-        update_status(status_path, status="completed", progress=100, message="Done")
+        s3_key = None
+
+        if use_s3():
+            job_id = os.path.basename(os.path.dirname(input_path))
+            s3_key = f"worksheets/{job_id}/output.docx"
+
+            upload_file_to_s3(local_output_path, s3_key)
+
+        update_status(
+            status_path,
+            status="completed",
+            progress=100,
+            message="Concluído!",
+            extra={"s3_key": s3_key} if s3_key else None
+        )
 
     except Exception as e:
-        update_status(status_path, status="failed", message=str(e))
+        update_status(
+            status_path,
+            status="failed",
+            message=str(e)
+        )
 
 @app.get("/")
 def serve_ui():
@@ -88,13 +106,25 @@ async def upload(file: UploadFile = File(...)):
 @app.get("/download/{job_id}")
 def download(job_id: str):
     job_dir = os.path.join(JOBS_DIR, job_id)
+    status_path = os.path.join(job_dir, "status.json")
     output_path = os.path.join(job_dir, "output.docx")
 
+    if not os.path.exists(status_path):
+        return JSONResponse(status_code=404, content={"error": "Job not found"})
+
+    with open(status_path, "r", encoding="utf-8") as f:
+        status = json.load(f)
+
+    if use_s3():
+        s3_key = status.get("s3_key")
+        if not s3_key:
+            return JSONResponse(status_code=404, content={"error": "Output not found in S3"})
+
+        download_url = generate_download_url(s3_key)
+        return RedirectResponse(download_url)
+
     if not os.path.exists(output_path):
-        return JSONResponse(
-            status_code=404,
-            content={"error": "File not found"}
-        )
+        return JSONResponse(status_code=404, content={"error": "File not found"})
 
     return FileResponse(
         output_path,
