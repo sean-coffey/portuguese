@@ -72,4 +72,7 @@ def analyze_phrase(text: str) -> PhraseItem:
         )
 
     except Exception as e:
-        raise RuntimeError(f"Analyzer failed for input '{text}': {e}") from e
+        print(f"[ANALYZER ERROR] input={text!r} normalized={normalized!r} error={e}")
+        raise RuntimeError(
+            f"Analyzer failed for input '{text}'."
+        ) from e

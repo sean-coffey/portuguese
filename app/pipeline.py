@@ -9,8 +9,6 @@ from app.image_generator import generate_image
 from app.doc_builder import build_docx
 from app.overrides import get_phrase_override
 from app.models import PhraseItem, Scene
-
-# NEW
 from app.jobs.utils import update_status
 
 
@@ -20,12 +18,17 @@ def process_document(input_path: str, output_filename: str = "result.docx", stat
         "friendly expression, orange t-shirt, blue jeans, and simple shoes."
     )
 
+    temp_files_to_delete = []
+
     # -------------------------
     # 1. Extract phrases
     # -------------------------
     update_status(status_path, progress=5, message="A analisar o documento...")
 
     phrases = extract_phrases_from_docx(input_path)
+
+    if not phrases:
+        raise RuntimeError("O documento não contém frases para processar.")
 
     # -------------------------
     # 2. Analyze phrases
@@ -55,9 +58,7 @@ def process_document(input_path: str, output_filename: str = "result.docx", stat
         else:
             analysis = analyze_phrase(phrase)
 
-        # Build prompt
         analysis.final_image_prompt = build_image_prompt(analysis)
-
         items.append(analysis)
 
     # -------------------------
@@ -83,13 +84,17 @@ def process_document(input_path: str, output_filename: str = "result.docx", stat
             item = futures[future]
 
             try:
-                item.image_path = future.result()
+                image_path, is_temp_file = future.result()
+                item.image_path = image_path
+
+                if is_temp_file:
+                    temp_files_to_delete.append(image_path)
+
             except Exception as e:
-                print(f"Falha na imagem para {item.original}: {e}")
-                item.image_path = None  # or fallback
+                print(f"[IMAGE ERROR] Falha na imagem para {item.original!r}: {e}")
+                item.image_path = None
 
             completed += 1
-
             progress = 20 + int((completed / total) * 60)
 
             update_status(
@@ -97,6 +102,12 @@ def process_document(input_path: str, output_filename: str = "result.docx", stat
                 progress=progress,
                 message=f"A gerar imagens ({completed}/{total})"
             )
+
+    # Remove any items that failed image generation
+    items = [item for item in items if item.image_path]
+
+    if not items:
+        raise RuntimeError("Não foi possível gerar nenhuma imagem para esta ficha.")
 
     # -------------------------
     # 4. Build document
@@ -107,6 +118,17 @@ def process_document(input_path: str, output_filename: str = "result.docx", stat
 
     build_docx(items, output_path)
 
-    update_status(status_path, progress=100, message="Concluido!")
+    # -------------------------
+    # 5. Cleanup temp files
+    # -------------------------
+    for temp_file in temp_files_to_delete:
+        try:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+                print(f"[TEMP CLEANUP] removed {temp_file}")
+        except Exception as e:
+            print(f"[TEMP CLEANUP ERROR] {temp_file}: {e}")
+
+    update_status(status_path, progress=100, message="Concluído!")
 
     return output_path

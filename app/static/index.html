@@ -366,7 +366,7 @@ async function pollStatus(job_id) {
 
         if (data.status === "failed") {
             clearInterval(interval);
-            statusEl.innerText = "Erro: " + data.error;
+            statusEl.innerText = "Erro: " + (data.message || data.error || "Erro desconhecido");
             generateBtn.disabled = false;
         }
     }, 1000);

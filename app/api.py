@@ -70,7 +70,8 @@ def process_job(input_path, output_path, status_path):
         update_status(
             status_path,
             status="failed",
-            message=str(e)
+            message="Ocorreu um erro ao gerar a ficha.",
+            extra={"error": str(e)}
         )
 
 @app.get("/")

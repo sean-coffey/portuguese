@@ -6,16 +6,12 @@ from typing import Iterable, Optional
 from openai import OpenAI
 
 from app.config import IMAGE_DIR, REFERENCE_ASSETS_DIR, STYLE_GUIDE_PATH
+from app.storage import use_s3, upload_file_to_s3, s3_object_exists, download_file_from_s3
 
 client = OpenAI()
 
-# 🔁 bump this whenever you want to regenerate everything
-CACHE_SCHEMA_VERSION = "v2"
+CACHE_SCHEMA_VERSION = "v4"
 
-
-# ---------------------------
-# Helpers
-# ---------------------------
 
 def _normalize_phrase_key(text: str) -> str:
     text = text.strip().lower()
@@ -61,9 +57,6 @@ def _build_cache_key(
     output_format: str,
     input_fidelity: str,
 ) -> str:
-    """
-    Build a stable cache key based on semantic inputs (NOT prompt text).
-    """
     hasher = hashlib.sha256()
 
     normalized_phrase = _normalize_phrase_key(phrase)
@@ -78,7 +71,6 @@ def _build_cache_key(
     hasher.update(output_format.encode())
     hasher.update(input_fidelity.encode())
 
-    # include reference image contents (important!)
     for path in sorted(reference_image_paths):
         hasher.update(path.encode())
         hasher.update(_file_sha256(path).encode())
@@ -104,32 +96,28 @@ def _build_full_prompt(scene_prompt: str, character_description: Optional[str]) 
     return "\n\n".join(parts)
 
 
-# ---------------------------
-# Main function
-# ---------------------------
-
 def generate_image(
     phrase: str,
     scene_prompt: str,
-    image_id: str,  # kept for compatibility (not used in filename)
+    image_id: str,  # kept for compatibility
     reference_image_paths: Optional[Iterable[str]] = None,
     character_description: Optional[str] = None,
     model: str = "gpt-image-1.5",
     size: str = "1024x1024",
     output_format: str = "png",
     input_fidelity: str = "high",
-) -> str:
+) -> tuple[str, bool]:
     """
-    Generate a consistent image with caching.
+    Returns:
+        (image_path, is_temp_file)
 
-    Key idea:
-    Cache is based on PHRASE + STYLE + REFERENCES (not prompt text),
-    so small prompt variations won't break caching.
+    is_temp_file=True means the file was downloaded from S3 cache to a temporary
+    local path and should be deleted later after the DOCX is built.
     """
+    del image_id  # not used in hashed-filename mode
 
     os.makedirs(IMAGE_DIR, exist_ok=True)
 
-    # Load references
     ref_paths = list(reference_image_paths) if reference_image_paths else _default_reference_image_paths()
 
     if not ref_paths:
@@ -139,7 +127,6 @@ def generate_image(
         if not os.path.exists(p):
             raise FileNotFoundError(f"Missing reference image: {p}")
 
-    # Build cache key (🔑 key change vs previous version)
     cache_key = _build_cache_key(
         phrase=phrase,
         character_description=character_description,
@@ -151,20 +138,33 @@ def generate_image(
     )
 
     output_ext = "png" if output_format == "png" else output_format
-    output_path = os.path.join(IMAGE_DIR, f"{cache_key}.{output_ext}")
+    filename = f"{cache_key}.{output_ext}"
+    local_output_path = os.path.join(IMAGE_DIR, filename)
+    s3_key = f"cached-images/{filename}"
 
-    # ✅ CACHE HIT
-    if os.path.exists(output_path):
-        print(f"  Reusing cached image: {output_path}")
-        return output_path
+    # -------------------------
+    # CLOUD CACHE (S3)
+    # -------------------------
+    if use_s3():
+        if s3_object_exists(s3_key):
+            print(f"[CACHE HIT S3] {s3_key}")
+            downloaded_path = download_file_from_s3(s3_key, suffix=f".{output_ext}")
+            return downloaded_path, True
 
-    # Build final prompt (used for generation ONLY, not caching)
+    # -------------------------
+    # LOCAL CACHE
+    # -------------------------
+    if os.path.exists(local_output_path):
+        print(f"[CACHE HIT LOCAL] {local_output_path}")
+        return local_output_path, False
+
+    print(f"[CACHE MISS] generating image for phrase: {phrase}")
+
     final_prompt = _build_full_prompt(
         scene_prompt=scene_prompt,
         character_description=character_description,
     )
 
-    # Generate image
     file_handles = []
 
     try:
@@ -185,15 +185,19 @@ def generate_image(
 
         image_bytes = base64.b64decode(result.data[0].b64_json)
 
-        with open(output_path, "wb") as f:
+        with open(local_output_path, "wb") as f:
             f.write(image_bytes)
 
-        print(f"  Generated new image: {output_path}")
+        if use_s3():
+            upload_file_to_s3(local_output_path, s3_key)
+            print(f"[CACHE STORE S3] {s3_key}")
 
-        return output_path
+        print(f"[IMAGE GENERATED] {local_output_path}")
+        return local_output_path, False
 
     except Exception as e:
-        raise RuntimeError(f"Image generation failed: {e}") from e
+        print(f"[IMAGE ERROR] phrase={phrase!r} error={e}")
+        raise RuntimeError(f"Image generation failed for phrase '{phrase}'.") from e
 
     finally:
         for fh in file_handles:
