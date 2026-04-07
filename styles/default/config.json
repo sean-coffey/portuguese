@@ -1,0 +1,10 @@
+{
+  "name": "default",
+  "label_pt": "Estilo padrão",
+  "character_description": "Recurring school-age character with dark curly shoulder-length hair, friendly expression, orange t-shirt, blue jeans, and simple shoes.",
+  "reference_images": [
+    "main_character_front.png",
+    "main_character_side.png",
+    "style_reference.png"
+  ]
+}

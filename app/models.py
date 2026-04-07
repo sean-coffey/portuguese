@@ -53,6 +53,55 @@ class AnalyzerOutput(BaseModel):
             "with simple background and no text."
         )
     )
+    keyword_pt: Optional[str] = Field(
+        default=None,
+        description="Most teachable Portuguese keyword from the input."
+    )
+    verb_pt: Optional[str] = Field(
+        default=None,
+        description="Main Portuguese verb if clearly identifiable."
+    )
+    focus_phrase_pt: Optional[str] = Field(
+        default=None,
+        description="Short Portuguese chunk useful for classroom focus."
+    )
+    pedagogical_target: Optional[Literal[
+        "vocabulary",
+        "verb",
+        "noun",
+        "meaning",
+        "description",
+        "grammar",
+        "other"
+    ]] = Field(
+        default=None,
+        description="Best classroom focus for a simple worksheet question."
+    )
+
+    main_verb_infinitive_pt: Optional[str] = Field(
+        default=None,
+        description="Main Portuguese verb in infinitive form, if clear."
+    )
+    main_verb_surface_pt: Optional[str] = Field(
+        default=None,
+        description="Main Portuguese verb exactly as it appears in the input, if clear."
+    )
+    subject_pt: Optional[str] = Field(
+        default=None,
+        description="Main subject in Portuguese, if clear."
+    )
+    number_pt: Optional[Literal["singular", "plural"]] = Field(
+        default=None,
+        description="Number of the main subject, if clear."
+    )
+    tense_pt: Optional[str] = Field(
+        default=None,
+        description="Main tense in Portuguese, if clear, e.g. presente."
+    )
+
+class QuestionOutput(BaseModel):
+    question_pt: str
+    answer_pt: Optional[str] = None
 
 
 class PhraseItem(BaseModel):
@@ -68,3 +117,18 @@ class PhraseItem(BaseModel):
     image_prompt: str
     final_image_prompt: Optional[str] = None
     image_path: Optional[str] = None
+
+    keyword_pt: Optional[str] = None
+    verb_pt: Optional[str] = None
+    focus_phrase_pt: Optional[str] = None
+    pedagogical_target: Optional[str] = None
+
+    main_verb_infinitive_pt: Optional[str] = None
+    main_verb_surface_pt: Optional[str] = None
+    subject_pt: Optional[str] = None
+    number_pt: Optional[str] = None
+    tense_pt: Optional[str] = None
+
+    question_pt: Optional[str] = None
+    answer_pt: Optional[str] = None
+    exercise_type: Optional[str] = None

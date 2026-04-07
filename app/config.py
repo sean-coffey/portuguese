@@ -22,3 +22,5 @@ AWS_REGION = os.getenv("AWS_REGION", "eu-west-1")
 
 for folder in [INPUT_DIR, OUTPUT_DIR, IMAGE_DIR, DATA_DIR, TEMPLATES_DIR, REFERENCE_ASSETS_DIR, PROMPTS_DIR]:
     folder.mkdir(parents=True, exist_ok=True)
+
+USE_LLM_QUESTION_REFINEMENT = os.getenv("USE_LLM_QUESTION_REFINEMENT", "true").lower() == "true"

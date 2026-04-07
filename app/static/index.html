@@ -1,18 +1,20 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt">
 <head>
-    <title>Sara Guimarães Aulas de Português</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sara Guimarães Portuguese Lessons</title>
     <style>
         :root {
             --navy: #1f2b4d;
             --gold: #d9a441;
             --gold-soft: #f3e2b8;
             --cream: #fffaf2;
-            --card: rgba(255, 255, 255, 0.9);
+            --card: rgba(255, 255, 255, 0.92);
             --text: #24304a;
             --muted: #6f7790;
             --green: #4caf50;
-            --green-soft: #dff3e3;
+            --red: #b84d4d;
             --border: rgba(31, 43, 77, 0.12);
             --shadow: 0 18px 40px rgba(31, 43, 77, 0.12);
         }
@@ -34,17 +36,15 @@
 
         .overlay {
             min-height: 100vh;
-            background: rgba(255, 250, 242, 0.76);
+            background: rgba(255, 250, 242, 0.82);
             backdrop-filter: blur(7px);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 32px 20px;
+            padding: 32px 20px 50px;
         }
 
         .shell {
             width: 100%;
-            max-width: 760px;
+            max-width: 960px;
+            margin: 0 auto;
         }
 
         .brand {
@@ -64,7 +64,6 @@
             font-size: 2rem;
             color: var(--navy);
             font-weight: 800;
-            letter-spacing: 0.3px;
         }
 
         .brand p {
@@ -76,300 +75,797 @@
             font-size: 0.92rem;
         }
 
+        .topbar {
+            text-align: right;
+            margin-bottom: 12px;
+        }
+
+        .topbar a {
+            color: var(--muted);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
         .card {
             background: var(--card);
             border: 1px solid var(--border);
             border-radius: 24px;
             box-shadow: var(--shadow);
-            padding: 30px;
+            padding: 26px;
+            margin-bottom: 22px;
         }
 
-        .intro {
-            text-align: center;
-            margin-bottom: 24px;
-        }
-
-        .intro h2 {
-            margin: 0 0 8px 0;
+        h2 {
+            margin-top: 0;
             color: var(--navy);
-            font-size: 1.35rem;
         }
 
-        .intro p {
-            margin: 0;
+        h3 {
+            color: var(--navy);
+            margin-bottom: 10px;
+        }
+
+        .muted {
             color: var(--muted);
-            line-height: 1.5;
         }
 
-        .dropzone {
-            border: 2px dashed var(--gold);
-            background: rgba(255, 250, 242, 0.92);
-            border-radius: 20px;
-            padding: 34px 20px;
-            cursor: pointer;
-            transition: 0.2s ease;
-            text-align: center;
+        .field {
+            margin-bottom: 14px;
         }
 
-        .dropzone:hover,
-        .dropzone.dragover {
-            background: #fff6e7;
-            border-color: #c99224;
-            transform: translateY(-1px);
-        }
-
-        .dropzone-title {
-            font-size: 1.05rem;
+        .field label {
+            display: block;
+            margin-bottom: 6px;
             font-weight: 700;
             color: var(--navy);
-            margin-bottom: 8px;
         }
 
-        .dropzone-subtitle {
+        .field input,
+        .field select,
+        .field textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: white;
             font-size: 0.95rem;
-            color: var(--muted);
+            color: var(--text);
         }
 
-        .actions {
-            margin-top: 22px;
+        .field textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+        }
+
+        .button-row {
             display: flex;
-            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 12px;
         }
 
         button {
-            padding: 12px 22px;
+            padding: 12px 20px;
             background: var(--navy);
             color: white;
             border: none;
             border-radius: 999px;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 0.98rem;
             font-weight: 700;
             box-shadow: 0 10px 20px rgba(31, 43, 77, 0.16);
-            transition: 0.2s ease;
         }
 
-        button:hover {
-            transform: translateY(-1px);
-            background: #17203a;
+        button.secondary {
+            background: white;
+            color: var(--navy);
+            border: 1px solid var(--border);
+            box-shadow: none;
         }
 
         button:disabled {
             opacity: 0.6;
             cursor: not-allowed;
-            transform: none;
-        }
-
-        .progress-wrap {
-            margin-top: 24px;
-        }
-
-        .progress-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-            font-size: 0.92rem;
-            color: var(--muted);
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 12px;
-            background: #efe7d7;
-            border-radius: 999px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, var(--gold), var(--green));
-            border-radius: 999px;
-            transition: width 0.35s ease;
         }
 
         .status {
-            margin-top: 14px;
-            min-height: 24px;
-            text-align: center;
+            margin-top: 12px;
+            min-height: 22px;
             color: var(--navy);
             font-weight: 600;
         }
 
-        .download-wrap {
-            margin-top: 22px;
-            text-align: center;
+        .draft-meta {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 18px;
         }
 
-        .download-link {
-            display: none;
-            text-decoration: none;
-            background: var(--green);
-            color: white;
-            padding: 12px 22px;
+        .item-card {
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 16px;
+            margin-bottom: 14px;
+            background: rgba(255,255,255,0.82);
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 10px;
+        }
+
+        .item-title {
+            font-weight: 800;
+            color: var(--navy);
+        }
+
+        .checkbox-line {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+            color: var(--text);
+        }
+
+        .small {
+            font-size: 0.88rem;
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 4px 10px;
             border-radius: 999px;
+            background: var(--gold-soft);
+            color: var(--navy);
+            font-size: 0.85rem;
             font-weight: 700;
-            box-shadow: 0 10px 20px rgba(76, 175, 80, 0.2);
         }
 
-        .download-link:hover {
-            background: #429a47;
+        .hidden {
+            display: none;
         }
 
-        .footer-note {
-            text-align: center;
-            margin-top: 16px;
-            font-size: 0.84rem;
-            color: var(--muted);
+        .error {
+            color: var(--red);
+        }
+
+        @media (max-width: 760px) {
+            .grid-2,
+            .grid-3,
+            .draft-meta {
+                grid-template-columns: 1fr;
+            }
+
+            .item-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
         }
     </style>
 </head>
 <body>
 <div class="overlay">
     <div class="shell">
+        <div class="topbar">
+            <a href="/logout">Terminar sessão</a>
+        </div>
+
         <div class="brand">
             <img src="/static/logo.png" alt="Sara Guimarães Portuguese Lessons logo">
             <h1>Sara Guimarães</h1>
             <p>Aulas de Português</p>
         </div>
-        <div style="text-align:right; margin-bottom:10px;">
-            <a href="/logout" style="color:#6f7790; text-decoration:none;">Terminar sessão</a>
+
+        <!-- CREATE DRAFT -->
+        <div class="card">
+            <h2>Criar rascunho</h2>
+            <p class="muted">Cole texto abaixo (uma palavra ou frase por linha) para criar um rascunho editável.</p>
+
+            <div class="field">
+                <label for="draftTitleInput">Título</label>
+                <input id="draftTitleInput" type="text" placeholder="Ex.: Ficha de vocabulário – animais">
+            </div>
+
+            <div class="grid-2">
+                <div class="field">
+                    <label for="worksheetProfile">Tipo de ficha</label>
+                    <select id="worksheetProfile">
+                        <option value="pt_only">Português + imagem</option>
+                        <option value="pt_en">Português + inglês + imagem</option>
+                        <option value="image_with_lines">Imagem com linhas para descrição</option>
+                        <option value="vocabulary_question">Imagem + pergunta de vocabulário</option>
+                        <option value="grammar_question">Imagem + pergunta de gramática</option>
+                        <option value="image_with_production">Imagem + produção escrita</option>
+                        <option value="glossary">Glossário ilustrado</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="styleProfile">Estilo visual</label>
+                    <select id="styleProfile">
+                        <option value="default">Estilo padrão</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="card" style="padding:16px; margin-top: 10px; margin-bottom: 14px;">
+                <h3>Perfil dos alunos</h3>
+                <div class="grid-3">
+                    <div class="field">
+                        <label for="cefrLevel">Nível CEFR</label>
+                        <select id="cefrLevel">
+                            <option value="A1">A1</option>
+                            <option value="A2" selected>A2</option>
+                            <option value="B1">B1</option>
+                            <option value="B2">B2</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="ageMin">Idade mínima</label>
+                        <input id="ageMin" type="number" min="3" max="99" value="8">
+                    </div>
+
+                    <div class="field">
+                        <label for="ageMax">Idade máxima</label>
+                        <input id="ageMax" type="number" min="3" max="99" value="12">
+                    </div>
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="draftTextInput">Texto</label>
+                <textarea id="draftTextInput" placeholder="Exemplo:
+Um menino anda de cavalo.
+A menina abre a janela.
+Pato"></textarea>
+            </div>
+
+            <div class="button-row">
+                <button id="createDraftBtn" onclick="createDraft()">Criar rascunho</button>
+            </div>
+
+            <div class="status" id="createStatus">Pronto</div>
         </div>
 
-        <div class="card">
-            <div class="intro">
-                <h2>Gerador de Fichas</h2>
-                <p>Carregue um documento Word com palavras ou frases em português<br> para gerar uma ficha ilustrada.</p>
-            </div>
+        <!-- DRAFT EDITOR -->
+        <div class="card hidden" id="draftEditorCard">
+            <h2>Editor de rascunho</h2>
 
-            <div class="dropzone" id="dropzone">
-                <div class="dropzone-title" id="dropzoneTitle">Arraste o ficheiro .docx para aqui</div>
-                <div class="dropzone-subtitle">ou clique para selecionar</div>
-            </div>
-
-            <input type="file" id="fileInput" hidden accept=".docx">
-
-            <div class="actions">
-                <button id="generateBtn" onclick="upload()">Gerar Ficha</button>
-            </div>
-
-            <div class="progress-wrap">
-                <div class="progress-meta">
-                    <span>Progresso</span>
-                    <span id="progressText">0%</span>
+            <div class="draft-meta">
+                <div>
+                    <div class="small muted">ID do rascunho</div>
+                    <div id="draftIdDisplay" class="pill">—</div>
                 </div>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
+                <div>
+                    <div class="small muted">Última atualização</div>
+                    <div id="draftUpdatedDisplay">—</div>
                 </div>
             </div>
 
-            <div class="status" id="status">Pronto</div>
-
-            <div class="download-wrap">
-                <a class="download-link" id="download">Descarregar Ficha</a>
+            <div class="field">
+                <label for="draftTitleEdit">Título</label>
+                <input id="draftTitleEdit" type="text">
             </div>
 
-            <div class="footer-note">
-                Imagens geradas por IA para uso educativo.
+            <div class="grid-2">
+                <div class="field">
+                    <label for="worksheetProfileEdit">Tipo de ficha</label>
+                    <select id="worksheetProfileEdit">
+                        <option value="pt_only">Português + imagem</option>
+                        <option value="pt_en">Português + inglês + imagem</option>
+                        <option value="image_with_lines">Imagem com linhas para descrição</option>
+                        <option value="vocabulary_question">Imagem + pergunta de vocabulário</option>
+                        <option value="grammar_question">Imagem + pergunta de gramática</option>
+                        <option value="image_with_production">Imagem + produção escrita</option>
+                        <option value="glossary">Glossário ilustrado</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="styleProfileEdit">Estilo visual</label>
+                    <select id="styleProfileEdit">
+                        <option value="default">Estilo padrão</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="card" style="padding:16px; margin-top: 10px; margin-bottom: 14px;">
+                <h3>Perfil dos alunos</h3>
+                <div class="grid-3">
+                    <div class="field">
+                        <label for="cefrLevelEdit">Nível CEFR</label>
+                        <select id="cefrLevelEdit">
+                            <option value="A1">A1</option>
+                            <option value="A2">A2</option>
+                            <option value="B1">B1</option>
+                            <option value="B2">B2</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="ageMinEdit">Idade mínima</label>
+                        <input id="ageMinEdit" type="number" min="3" max="99">
+                    </div>
+
+                    <div class="field">
+                        <label for="ageMaxEdit">Idade máxima</label>
+                        <input id="ageMaxEdit" type="number" min="3" max="99">
+                    </div>
+                </div>
+            </div>
+
+            <div id="draftItemsContainer"></div>
+
+            <div class="button-row">
+                <button id="saveDraftBtn" onclick="saveDraft()">Guardar rascunho</button>
+                <button onclick="generateFromDraft()">Gerar ficha final</button>
+                <button class="secondary" onclick="reloadDraft()">Recarregar rascunho</button>
+            </div>
+
+            <div class="status" id="saveStatus"></div>
+
+            <div class="status" id="generateStatus"></div>
+            <div style="margin-top:10px;">
+                <a id="draftDownloadLink" class="hidden" href="#" style="color: var(--green); font-weight: 700; text-decoration: none;">
+                    Descarregar ficha final
+                </a>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-let selectedFile = null;
+let currentDraft = null;
 
-const dropzone = document.getElementById("dropzone");
-const dropzoneTitle = document.getElementById("dropzoneTitle");
-const fileInput = document.getElementById("fileInput");
-const generateBtn = document.getElementById("generateBtn");
-const statusEl = document.getElementById("status");
-const progressFill = document.getElementById("progressFill");
-const progressText = document.getElementById("progressText");
-const download = document.getElementById("download");
+function buildLearnerProfileFromCreateForm() {
+    return {
+        cefr_level: document.getElementById("cefrLevel").value,
+        age_min: parseInt(document.getElementById("ageMin").value || "", 10) || null,
+        age_max: parseInt(document.getElementById("ageMax").value || "", 10) || null,
+    };
+}
 
-dropzone.onclick = () => fileInput.click();
+function buildLearnerProfileFromEditForm() {
+    return {
+        cefr_level: document.getElementById("cefrLevelEdit").value,
+        age_min: parseInt(document.getElementById("ageMinEdit").value || "", 10) || null,
+        age_max: parseInt(document.getElementById("ageMaxEdit").value || "", 10) || null,
+    };
+}
 
-fileInput.onchange = () => {
-    selectedFile = fileInput.files[0];
-    if (selectedFile) {
-        dropzoneTitle.innerText = selectedFile.name;
-    }
-};
+async function createDraft() {
+    const createStatus = document.getElementById("createStatus");
+    const createBtn = document.getElementById("createDraftBtn");
 
-dropzone.ondragover = (e) => {
-    e.preventDefault();
-    dropzone.classList.add("dragover");
-};
+    const text = document.getElementById("draftTextInput").value.trim();
 
-dropzone.ondragleave = () => {
-    dropzone.classList.remove("dragover");
-};
-
-dropzone.ondrop = (e) => {
-    e.preventDefault();
-    dropzone.classList.remove("dragover");
-    selectedFile = e.dataTransfer.files[0];
-    if (selectedFile) {
-        dropzoneTitle.innerText = selectedFile.name;
-    }
-};
-
-async function upload() {
-    if (!selectedFile) {
-        alert("Por favor selecione um ficheiro .docx.");
+    if (!text) {
+        createStatus.innerText = "Por favor cole algum texto.";
+        createStatus.classList.add("error");
         return;
     }
 
-    const formData = new FormData();
-    formData.append("file", selectedFile);
+    createStatus.classList.remove("error");
+    createStatus.innerText = "A criar rascunho...";
+    createBtn.disabled = true;
 
-    generateBtn.disabled = true;
-    progressFill.style.width = "0%";
-    progressText.innerText = "0%";
-    statusEl.innerText = "A iniciar...";
-    download.style.display = "none";
+    const payload = {
+        title: document.getElementById("draftTitleInput").value || null,
+        text: text,
+        worksheet_profile_name: document.getElementById("worksheetProfile").value,
+        style_profile_name: document.getElementById("styleProfile").value,
+        learner_profile: buildLearnerProfileFromCreateForm(),
+    };
 
-    const res = await fetch("/upload", {
-        method: "POST",
-        body: formData
-    });
+    try {
+        const res = await fetch("/drafts/from-text", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        });
 
-    const data = await res.json();
-    pollStatus(data.job_id);
+        if (!res.ok) {
+            const errorText = await res.text();
+            createStatus.innerText = "Erro ao criar rascunho.";
+            createStatus.classList.add("error");
+            console.error(errorText);
+            createBtn.disabled = false;
+            return;
+        }
+
+        const draft = await res.json();
+        currentDraft = draft;
+        renderDraft(draft);
+
+        createStatus.innerText = "Rascunho criado com sucesso.";
+        createBtn.disabled = false;
+    } catch (err) {
+        console.error(err);
+        createStatus.innerText = "Erro ao criar rascunho.";
+        createStatus.classList.add("error");
+        createBtn.disabled = false;
+    }
 }
 
-async function pollStatus(job_id) {
-    const interval = setInterval(async () => {
-        const res = await fetch(`/status/${job_id}`);
+function renderDraft(draft) {
+    document.getElementById("draftEditorCard").classList.remove("hidden");
+
+    document.getElementById("draftIdDisplay").innerText = draft.draft_id;
+    document.getElementById("draftUpdatedDisplay").innerText = draft.updated_at || "—";
+
+    document.getElementById("draftTitleEdit").value = draft.title || "";
+    document.getElementById("worksheetProfileEdit").value = draft.worksheet_profile_name || "pt_only";
+    document.getElementById("styleProfileEdit").value = draft.style_profile_name || "default";
+
+    document.getElementById("cefrLevelEdit").value = draft.learner_profile?.cefr_level || "A1";
+    document.getElementById("ageMinEdit").value = draft.learner_profile?.age_min ?? "";
+    document.getElementById("ageMaxEdit").value = draft.learner_profile?.age_max ?? "";
+
+    const container = document.getElementById("draftItemsContainer");
+    container.innerHTML = "";
+
+    draft.items.forEach((item, index) => {
+        const card = document.createElement("div");
+        card.className = "item-card";
+
+        card.innerHTML = `
+            <div class="item-header">
+                <div>
+                    <div class="item-title">${escapeHtml(item.normalized || item.original || "")}</div>
+                    <div class="small muted">Gloss: ${escapeHtml(item.gloss_en || "—")}</div>
+                </div>
+                <label class="checkbox-line">
+                    <input type="checkbox" ${item.include_item !== false ? "checked" : ""} data-field="include_item" data-index="${index}">
+                    Incluir
+                </label>
+            </div>
+
+            <div class="grid-2">
+                <div class="field">
+                    <label>Família de exercício</label>
+                    <select
+                        id="family-select-${item.item_id}"
+                        data-field="selected_exercise_family"
+                        data-index="${index}"
+                    >
+                        <option value="">—</option>
+                        <option value="sem_pergunta" ${item.selected_exercise_family === "sem_pergunta" ? "selected" : ""}>Sem pergunta</option>
+
+                        <option value="meaning" ${item.selected_exercise_family === "meaning" ? "selected" : ""}>Vocabulário: significado</option>
+                        <option value="use_in_sentence" ${item.selected_exercise_family === "use_in_sentence" ? "selected" : ""}>Vocabulário: usar numa frase</option>
+                        <option value="find_word" ${item.selected_exercise_family === "find_word" ? "selected" : ""}>Vocabulário: encontrar palavra</option>
+
+                        <option value="identify_verb" ${item.selected_exercise_family === "identify_verb" ? "selected" : ""}>Gramática: identificar verbo</option>
+                        <option value="reuse_verb" ${item.selected_exercise_family === "reuse_verb" ? "selected" : ""}>Gramática: usar verbo numa nova frase</option>
+                        <option value="complete_conjugation" ${item.selected_exercise_family === "complete_conjugation" ? "selected" : ""}>Gramática: completar conjugação</option>
+                        <option value="change_subject" ${item.selected_exercise_family === "change_subject" ? "selected" : ""}>Gramática: mudar sujeito</option>
+                        <option value="rewrite_plural" ${item.selected_exercise_family === "rewrite_plural" ? "selected" : ""}>Gramática: passar para o plural</option>
+
+                        <option value="what_happens" ${item.selected_exercise_family === "what_happens" ? "selected" : ""}>Compreensão: o que acontece</option>
+                        <option value="who_is_there" ${item.selected_exercise_family === "who_is_there" ? "selected" : ""}>Compreensão: quem aparece</option>
+                        <option value="what_do_you_see" ${item.selected_exercise_family === "what_do_you_see" ? "selected" : ""}>Compreensão: o que vês</option>
+
+                        <option value="describe_two_sentences" ${item.selected_exercise_family === "describe_two_sentences" ? "selected" : ""}>Produção: descrever em duas frases</option>
+                        <option value="write_one_sentence" ${item.selected_exercise_family === "write_one_sentence" ? "selected" : ""}>Produção: escrever uma frase</option>
+                        <option value="describe_freely" ${item.selected_exercise_family === "describe_freely" ? "selected" : ""}>Produção: descrição livre</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Pergunta final</label>
+                    <input
+                        type="text"
+                        value="${escapeHtml(item.selected_question_pt || item.suggested_question_pt || "")}"
+                        data-field="selected_question_pt"
+                        data-index="${index}"
+                    >
+                    <div class="button-row" style="margin-top: 8px;">
+                        <button
+                            type="button"
+                            class="secondary"
+                            onclick="regenerateQuestion('${draft.draft_id}', '${item.item_id}', this)"
+                        >
+                            Sugerir pergunta
+                        </button>
+                    </div>
+                    <div
+                        class="small muted"
+                        id="question-status-${item.item_id}"
+                        style="margin-top: 6px; min-height: 18px;"
+                    ></div>
+                </div>
+            </div>
+        `;
+
+        container.appendChild(card);
+    });
+    document.querySelectorAll('select[data-field="selected_exercise_family"]').forEach(select => {
+        select.addEventListener("change", async (event) => {
+            const index = parseInt(event.target.dataset.index, 10);
+            const item = currentDraft.items[index];
+            if (!item) return;
+
+            item.selected_exercise_family = event.target.value || null;
+
+            if (
+                !item.selected_question_pt ||
+                item.selected_question_pt === item.suggested_question_pt
+            ) {
+                await regenerateQuestion(currentDraft.draft_id, item.item_id);
+            }
+        });
+    });
+}
+
+function collectEditedItems() {
+    if (!currentDraft) return [];
+
+    const items = JSON.parse(JSON.stringify(currentDraft.items));
+
+    document.querySelectorAll("[data-index]").forEach(el => {
+        const index = parseInt(el.dataset.index, 10);
+        const field = el.dataset.field;
+
+        if (!items[index]) return;
+
+        if (field === "include_item") {
+            items[index][field] = el.checked;
+        } else {
+            items[index][field] = el.value || null;
+        }
+    });
+
+    return items;
+}
+
+async function saveDraft() {
+    if (!currentDraft) return;
+
+    const saveBtn = document.getElementById("saveDraftBtn");
+    const saveStatus = document.getElementById("saveStatus");
+
+    saveBtn.disabled = true;
+    saveStatus.classList.remove("error");
+    saveStatus.innerText = "A guardar rascunho...";
+
+    const payload = {
+        title: document.getElementById("draftTitleEdit").value || null,
+        worksheet_profile_name: document.getElementById("worksheetProfileEdit").value,
+        style_profile_name: document.getElementById("styleProfileEdit").value,
+        learner_profile: buildLearnerProfileFromEditForm(),
+        items: collectEditedItems()
+    };
+
+    try {
+        const res = await fetch(`/drafts/${currentDraft.draft_id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+            const errorText = await res.text();
+            saveStatus.innerText = "Erro ao guardar rascunho.";
+            saveStatus.classList.add("error");
+            console.error(errorText);
+            saveBtn.disabled = false;
+            return;
+        }
+
+        const savedDraft = await res.json();
+        currentDraft = savedDraft;
+        renderDraft(savedDraft);
+
+        saveStatus.innerText = "Rascunho guardado com sucesso.";
+        saveBtn.disabled = false;
+    } catch (err) {
+        console.error(err);
+        saveStatus.innerText = "Erro ao guardar rascunho.";
+        saveStatus.classList.add("error");
+        saveBtn.disabled = false;
+    }
+}
+
+async function reloadDraft() {
+    if (!currentDraft) return;
+
+    const saveStatus = document.getElementById("saveStatus");
+    saveStatus.classList.remove("error");
+    saveStatus.innerText = "A recarregar rascunho...";
+
+    try {
+        const res = await fetch(`/drafts/${currentDraft.draft_id}`);
+        if (!res.ok) {
+            saveStatus.innerText = "Erro ao recarregar rascunho.";
+            saveStatus.classList.add("error");
+            return;
+        }
+
+        const draft = await res.json();
+        currentDraft = draft;
+        renderDraft(draft);
+        saveStatus.innerText = "Rascunho recarregado.";
+    } catch (err) {
+        console.error(err);
+        saveStatus.innerText = "Erro ao recarregar rascunho.";
+        saveStatus.classList.add("error");
+    }
+}
+
+async function generateFromDraft() {
+    if (!currentDraft) return;
+
+    const generateStatus = document.getElementById("generateStatus");
+    const downloadLink = document.getElementById("draftDownloadLink");
+
+    generateStatus.classList.remove("error");
+    generateStatus.innerText = "A iniciar geração da ficha...";
+    downloadLink.classList.add("hidden");
+    downloadLink.href = "#";
+
+    try {
+        const res = await fetch(`/drafts/${currentDraft.draft_id}/generate`, {
+            method: "POST"
+        });
+
+        if (!res.ok) {
+            const errorText = await res.text();
+            generateStatus.innerText = "Erro ao iniciar a geração.";
+            generateStatus.classList.add("error");
+            console.error(errorText);
+            return;
+        }
+
         const data = await res.json();
+        pollDraftGenerationStatus(data.job_id);
 
-        if (data.progress !== undefined) {
-            progressFill.style.width = data.progress + "%";
-            progressText.innerText = data.progress + "%";
-        }
+    } catch (err) {
+        console.error(err);
+        generateStatus.innerText = "Erro ao iniciar a geração.";
+        generateStatus.classList.add("error");
+    }
+}
 
-        if (data.message) {
-            statusEl.innerText = data.message;
-        }
+async function pollDraftGenerationStatus(jobId) {
+    const generateStatus = document.getElementById("generateStatus");
+    const downloadLink = document.getElementById("draftDownloadLink");
 
-        if (data.status === "completed") {
+    const interval = setInterval(async () => {
+        try {
+            const res = await fetch(`/status/${jobId}`);
+            const data = await res.json();
+
+            if (data.message) {
+                generateStatus.innerText = data.message;
+            }
+
+            if (data.status === "completed") {
+                clearInterval(interval);
+                generateStatus.innerText = "Ficha gerada com sucesso.";
+                downloadLink.href = `/download/${jobId}`;
+                downloadLink.classList.remove("hidden");
+            }
+
+            if (data.status === "failed") {
+                clearInterval(interval);
+                generateStatus.innerText = "Erro: " + (data.message || data.error || "Erro desconhecido");
+                generateStatus.classList.add("error");
+            }
+        } catch (err) {
             clearInterval(interval);
-            statusEl.innerText = "Concluido!";
-            progressFill.style.width = "100%";
-            progressText.innerText = "100%";
-            download.href = `/download/${job_id}`;
-            download.style.display = "inline-block";
-            generateBtn.disabled = false;
-        }
-
-        if (data.status === "failed") {
-            clearInterval(interval);
-            statusEl.innerText = "Erro: " + (data.message || data.error || "Erro desconhecido");
-            generateBtn.disabled = false;
+            console.error(err);
+            generateStatus.innerText = "Erro ao acompanhar a geração.";
+            generateStatus.classList.add("error");
         }
     }, 1000);
+}
+
+async function regenerateQuestion(draftId, itemId, buttonEl = null) {
+    const item = currentDraft.items.find(i => i.item_id === itemId);
+    if (!item) return;
+
+    const family = item.selected_exercise_family || item.suggested_exercise_family || null;
+
+    const statusEl = document.getElementById(`question-status-${itemId}`);
+    const familySelect = document.getElementById(`family-select-${itemId}`);
+
+    if (statusEl) {
+        statusEl.classList.remove("error");
+        statusEl.innerText = "A sugerir pergunta...";
+    }
+
+    if (buttonEl) {
+        buttonEl.disabled = true;
+        buttonEl.innerText = "A sugerir...";
+    }
+
+    if (familySelect) {
+        familySelect.disabled = true;
+    }
+
+    try {
+        const res = await fetch(`/drafts/${draftId}/items/${itemId}/regenerate-question`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                selected_exercise_family: family
+            })
+        });
+
+        if (!res.ok) {
+            const errorText = await res.text();
+            console.error(errorText);
+
+            if (statusEl) {
+                statusEl.innerText = "Erro ao sugerir pergunta.";
+                statusEl.classList.add("error");
+            }
+            return;
+        }
+
+        const updatedItem = await res.json();
+
+        const localItem = currentDraft.items.find(i => i.item_id === itemId);
+        if (localItem) {
+            localItem.selected_question_pt = updatedItem.selected_question_pt;
+            localItem.selected_exercise_family = updatedItem.selected_exercise_family;
+        }
+
+        if (statusEl) {
+            statusEl.innerText = "Pergunta atualizada.";
+        }
+
+        renderDraft(currentDraft);
+
+    } catch (err) {
+        console.error(err);
+
+        if (statusEl) {
+            statusEl.innerText = "Erro ao sugerir pergunta.";
+            statusEl.classList.add("error");
+        }
+    } finally {
+        if (buttonEl) {
+            buttonEl.disabled = false;
+            buttonEl.innerText = "Sugerir pergunta";
+        }
+
+        if (familySelect) {
+            familySelect.disabled = false;
+        }
+    }
+}
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
 }
 </script>
 </body>
