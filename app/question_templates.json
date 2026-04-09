@@ -1,0 +1,76 @@
+{
+  "identify_verb": {
+    "default": [
+      "Identifica o verbo nesta frase.",
+      "Qual é o verbo na frase \"{normalized}\"?",
+      "Assinala o verbo da frase."
+    ],
+    "word_verb": [
+      "A palavra \"{normalized}\" é um verbo, um nome ou um adjetivo?",
+      "Que tipo de palavra é \"{normalized}\"?",
+      "\"{normalized}\" é um verbo?"
+    ]
+  },
+  "change_subject": {
+    "default": [
+      "Substitui o sujeito por \"eles\" e reescreve a frase.",
+      "Troca o sujeito por \"nós\" e adapta o verbo.",
+      "Muda o sujeito da frase e ajusta o verbo corretamente."
+    ]
+  },
+  "rewrite_plural": {
+    "default": [
+      "Reescreve a frase no plural.",
+      "Passa a frase para o plural.",
+      "Transforma a frase para que o sujeito fique no plural."
+    ]
+  },
+  "meaning": {
+    "default": [
+      "O que significa a palavra \"{keyword}\"?",
+      "Explica o significado de \"{keyword}\"."
+    ]
+  },
+  "use_in_sentence": {
+    "default": [
+      "Escreve uma frase com a palavra \"{keyword}\".",
+      "Usa a palavra \"{keyword}\" numa frase."
+    ]
+  },
+  "find_word": {
+    "default": [
+      "Encontra na frase a palavra ou expressão \"{focus}\"."
+    ]
+  },
+  "what_happens": {
+    "default": [
+      "O que está a acontecer na imagem?",
+      "Que ação vês na imagem?"
+    ]
+  },
+  "who_is_there": {
+    "default": [
+      "Quem aparece na imagem?"
+    ]
+  },
+  "what_do_you_see": {
+    "default": [
+      "O que vês nesta imagem?"
+    ]
+  },
+  "describe_two_sentences": {
+    "default": [
+      "Descreve a imagem em duas frases."
+    ]
+  },
+  "write_one_sentence": {
+    "default": [
+      "Escreve uma frase sobre esta imagem."
+    ]
+  },
+  "describe_freely": {
+    "default": [
+      "Observa a imagem e escreve o que está a acontecer."
+    ]
+  }
+}

@@ -102,6 +102,7 @@ class AnalyzerOutput(BaseModel):
 class QuestionOutput(BaseModel):
     question_pt: str
     answer_pt: Optional[str] = None
+    exercise_family: Optional[str] = None
 
 
 class PhraseItem(BaseModel):

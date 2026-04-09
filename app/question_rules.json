@@ -1,0 +1,154 @@
+{
+  "noun": {
+    "allowed_families": [
+      "meaning",
+      "use_in_sentence",
+      "write_one_sentence",
+      "describe_freely",
+      "sem_pergunta"
+    ],
+    "preferred_families": [
+      "meaning",
+      "use_in_sentence"
+    ],
+    "cefr_preferred_families": {
+      "A1": ["meaning", "use_in_sentence"],
+      "A2": ["meaning", "use_in_sentence"],
+      "B1": ["use_in_sentence", "write_one_sentence"],
+      "B2": ["write_one_sentence", "describe_freely"]
+    }
+  },
+  "adjective": {
+    "allowed_families": [
+      "meaning",
+      "use_in_sentence",
+      "write_one_sentence",
+      "describe_freely",
+      "sem_pergunta"
+    ],
+    "preferred_families": [
+      "meaning",
+      "use_in_sentence"
+    ],
+    "cefr_preferred_families": {
+      "A1": ["meaning", "use_in_sentence"],
+      "A2": ["meaning", "use_in_sentence"],
+      "B1": ["use_in_sentence", "write_one_sentence"],
+      "B2": ["write_one_sentence", "describe_freely"]
+    }
+  },
+  "verb": {
+    "allowed_families": [
+      "identify_verb",
+      "reuse_verb",
+      "complete_conjugation",
+      "meaning",
+      "use_in_sentence",
+      "write_one_sentence",
+      "describe_freely",
+      "sem_pergunta"
+    ],
+    "preferred_families": [
+      "reuse_verb",
+      "complete_conjugation",
+      "identify_verb"
+    ],
+    "cefr_preferred_families": {
+      "A1": ["identify_verb", "reuse_verb"],
+      "A2": ["reuse_verb", "complete_conjugation", "identify_verb"],
+      "B1": ["complete_conjugation", "reuse_verb", "write_one_sentence"],
+      "B2": ["complete_conjugation", "write_one_sentence", "describe_freely"]
+    }
+  },
+  "other": {
+    "allowed_families": [
+      "meaning",
+      "use_in_sentence",
+      "write_one_sentence",
+      "describe_freely",
+      "sem_pergunta"
+    ],
+    "preferred_families": [
+      "meaning"
+    ],
+    "cefr_preferred_families": {
+      "A1": ["meaning"],
+      "A2": ["meaning", "use_in_sentence"],
+      "B1": ["use_in_sentence", "write_one_sentence"],
+      "B2": ["write_one_sentence", "describe_freely"]
+    }
+  },
+  "literal": {
+    "allowed_families": [
+      "identify_verb",
+      "reuse_verb",
+      "complete_conjugation",
+      "change_subject",
+      "rewrite_plural",
+      "meaning",
+      "use_in_sentence",
+      "what_happens",
+      "who_is_there",
+      "what_do_you_see",
+      "describe_two_sentences",
+      "write_one_sentence",
+      "describe_freely",
+      "sem_pergunta"
+    ],
+    "preferred_families": [
+      "what_happens",
+      "identify_verb",
+      "write_one_sentence"
+    ],
+    "cefr_preferred_families": {
+      "A1": ["what_do_you_see", "who_is_there", "meaning"],
+      "A2": ["what_happens", "identify_verb", "write_one_sentence"],
+      "B1": ["identify_verb", "change_subject", "write_one_sentence"],
+      "B2": ["complete_conjugation", "write_one_sentence", "describe_freely"]
+    }
+  },
+  "idiom": {
+    "allowed_families": [
+      "identify_verb",
+      "reuse_verb",
+      "complete_conjugation",
+      "write_one_sentence",
+      "describe_freely",
+      "sem_pergunta"
+    ],
+    "preferred_families": [
+      "write_one_sentence",
+      "reuse_verb"
+    ],
+    "cefr_preferred_families": {
+      "A1": ["write_one_sentence"],
+      "A2": ["write_one_sentence", "reuse_verb"],
+      "B1": ["reuse_verb", "write_one_sentence"],
+      "B2": ["complete_conjugation", "describe_freely"]
+    }
+  },
+  "non_visual": {
+    "allowed_families": [
+      "identify_verb",
+      "reuse_verb",
+      "complete_conjugation",
+      "change_subject",
+      "rewrite_plural",
+      "meaning",
+      "use_in_sentence",
+      "write_one_sentence",
+      "describe_freely",
+      "sem_pergunta"
+    ],
+    "preferred_families": [
+      "meaning",
+      "write_one_sentence"
+    ],
+    "cefr_preferred_families": {
+      "A1": ["meaning", "use_in_sentence"],
+      "A2": ["meaning", "write_one_sentence"],
+      "B1": ["write_one_sentence", "identify_verb"],
+      "B2": ["complete_conjugation", "describe_freely"]
+    }
+  }
+}

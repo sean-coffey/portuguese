@@ -1,0 +1,98 @@
+{
+  "sem_pergunta": {
+    "label_pt": "Sem pergunta",
+    "group_pt": "Geral",
+    "question_mode": "none",
+    "llm_backed": false
+  },
+
+  "meaning": {
+    "label_pt": "Vocabulário: significado",
+    "group_pt": "Vocabulário",
+    "question_mode": "vocabulary",
+    "llm_backed": false
+  },
+  "use_in_sentence": {
+    "label_pt": "Vocabulário: usar numa frase",
+    "group_pt": "Vocabulário",
+    "question_mode": "vocabulary",
+    "llm_backed": false
+  },
+  "find_word": {
+    "label_pt": "Vocabulário: encontrar palavra",
+    "group_pt": "Vocabulário",
+    "question_mode": "vocabulary",
+    "llm_backed": false
+  },
+
+  "identify_verb": {
+    "label_pt": "Gramática: identificar verbo",
+    "group_pt": "Gramática",
+    "question_mode": "grammar",
+    "llm_backed": false
+  },
+  "reuse_verb": {
+    "label_pt": "Gramática: usar verbo numa nova frase",
+    "group_pt": "Gramática",
+    "question_mode": "grammar",
+    "llm_backed": true,
+    "llm_strategy": "reuse_verb"
+  },
+  "complete_conjugation": {
+    "label_pt": "Gramática: completar conjugação",
+    "group_pt": "Gramática",
+    "question_mode": "grammar",
+    "llm_backed": true,
+    "llm_strategy": "complete_conjugation"
+  },
+  "change_subject": {
+    "label_pt": "Gramática: mudar sujeito",
+    "group_pt": "Gramática",
+    "question_mode": "grammar",
+    "llm_backed": false
+  },
+  "rewrite_plural": {
+    "label_pt": "Gramática: passar para o plural",
+    "group_pt": "Gramática",
+    "question_mode": "grammar",
+    "llm_backed": false
+  },
+
+  "what_happens": {
+    "label_pt": "Compreensão: o que acontece",
+    "group_pt": "Compreensão",
+    "question_mode": "comprehension",
+    "llm_backed": false
+  },
+  "who_is_there": {
+    "label_pt": "Compreensão: quem aparece",
+    "group_pt": "Compreensão",
+    "question_mode": "comprehension",
+    "llm_backed": false
+  },
+  "what_do_you_see": {
+    "label_pt": "Compreensão: o que vês",
+    "group_pt": "Compreensão",
+    "question_mode": "comprehension",
+    "llm_backed": false
+  },
+
+  "describe_two_sentences": {
+    "label_pt": "Produção: descrever em duas frases",
+    "group_pt": "Produção",
+    "question_mode": "production",
+    "llm_backed": false
+  },
+  "write_one_sentence": {
+    "label_pt": "Produção: escrever uma frase",
+    "group_pt": "Produção",
+    "question_mode": "production",
+    "llm_backed": false
+  },
+  "describe_freely": {
+    "label_pt": "Produção: descrição livre",
+    "group_pt": "Produção",
+    "question_mode": "production",
+    "llm_backed": false
+  }
+}

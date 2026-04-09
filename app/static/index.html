@@ -215,6 +215,19 @@
             color: var(--navy);
         }
 
+        .question-row {
+            display: grid;
+            grid-template-columns: 0.9fr 1.6fr;
+            gap: 16px;
+            align-items: start;
+        }
+
+        @media (max-width: 760px) {
+            .question-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .checkbox-line {
             display: flex;
             align-items: center;
@@ -245,6 +258,24 @@
             color: var(--red);
         }
 
+
+        .draft-meta-small span {
+            color: #777;
+        }
+
+        .draft-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 16px;
+        }
+
+        .draft-meta-inline {
+            font-size: 12px;
+            color: #777;
+            white-space: nowrap;
+        }
+
         @media (max-width: 760px) {
             .grid-2,
             .grid-3,
@@ -256,6 +287,9 @@
                 flex-direction: column;
                 align-items: flex-start;
             }
+        }
+        #savedDraftsCard {
+            border-style: dashed;
         }
     </style>
 </head>
@@ -332,30 +366,33 @@
             <div class="field">
                 <label for="draftTextInput">Texto</label>
                 <textarea id="draftTextInput" placeholder="Exemplo:
-Um menino anda de cavalo.
-A menina abre a janela.
-Pato"></textarea>
+                Um menino anda de cavalo.
+                A menina abre a janela.
+                Pato"></textarea>
             </div>
 
             <div class="button-row">
                 <button id="createDraftBtn" onclick="createDraft()">Criar rascunho</button>
+                <button type="button" class="secondary" onclick="toggleSavedDrafts()">Abrir rascunho guardado</button>
             </div>
 
             <div class="status" id="createStatus">Pronto</div>
         </div>
 
+        <div class="card hidden" id="savedDraftsCard">
+            <h2>Rascunhos guardados</h2>
+            <div class="button-row" style="margin-bottom: 12px;">
+                <button type="button" class="secondary" onclick="toggleSavedDrafts()">Fechar</button>
+            </div>
+            <div id="savedDraftsContainer" class="muted">A carregar...</div>
+        </div>
+
         <!-- DRAFT EDITOR -->
         <div class="card hidden" id="draftEditorCard">
-            <h2>Editor de rascunho</h2>
-
-            <div class="draft-meta">
-                <div>
-                    <div class="small muted">ID do rascunho</div>
-                    <div id="draftIdDisplay" class="pill">—</div>
-                </div>
-                <div>
-                    <div class="small muted">Última atualização</div>
-                    <div id="draftUpdatedDisplay">—</div>
+            <div class="draft-header-row">
+                <h2>Editor de rascunho</h2>
+                <div class="draft-meta-inline">
+                    Ref.: <span id="draftIdDisplay">—</span> · Última edição: <span id="draftUpdatedDisplay">—</span>
                 </div>
             </div>
 
@@ -433,6 +470,31 @@ Pato"></textarea>
 
 <script>
 let currentDraft = null;
+let hasUnsavedChanges = false;
+let questionFamilies = {};
+
+
+function markDraftDirty() {
+    hasUnsavedChanges = true;
+}
+
+function formatDateTime(isoString) {
+    if (!isoString) return "";
+
+    const date = new Date(isoString);
+
+    return date.toLocaleString("pt-PT", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+}
+
+function shortId(id) {
+    return id ? id.slice(0, 8) : "";
+}
 
 function buildLearnerProfileFromCreateForm() {
     return {
@@ -498,6 +560,8 @@ async function createDraft() {
 
         createStatus.innerText = "Rascunho criado com sucesso.";
         createBtn.disabled = false;
+        hasUnsavedChanges = false;
+        loadSavedDrafts();
     } catch (err) {
         console.error(err);
         createStatus.innerText = "Erro ao criar rascunho.";
@@ -509,8 +573,8 @@ async function createDraft() {
 function renderDraft(draft) {
     document.getElementById("draftEditorCard").classList.remove("hidden");
 
-    document.getElementById("draftIdDisplay").innerText = draft.draft_id;
-    document.getElementById("draftUpdatedDisplay").innerText = draft.updated_at || "—";
+    document.getElementById("draftIdDisplay").innerText = shortId(draft.draft_id);
+    document.getElementById("draftUpdatedDisplay").innerText = formatDateTime(draft.updated_at) || "—";
 
     document.getElementById("draftTitleEdit").value = draft.title || "";
     document.getElementById("worksheetProfileEdit").value = draft.worksheet_profile_name || "pt_only";
@@ -539,7 +603,7 @@ function renderDraft(draft) {
                 </label>
             </div>
 
-            <div class="grid-2">
+            <div class="question-row">
                 <div class="field">
                     <label>Família de exercício</label>
                     <select
@@ -547,26 +611,10 @@ function renderDraft(draft) {
                         data-field="selected_exercise_family"
                         data-index="${index}"
                     >
-                        <option value="">—</option>
-                        <option value="sem_pergunta" ${item.selected_exercise_family === "sem_pergunta" ? "selected" : ""}>Sem pergunta</option>
-
-                        <option value="meaning" ${item.selected_exercise_family === "meaning" ? "selected" : ""}>Vocabulário: significado</option>
-                        <option value="use_in_sentence" ${item.selected_exercise_family === "use_in_sentence" ? "selected" : ""}>Vocabulário: usar numa frase</option>
-                        <option value="find_word" ${item.selected_exercise_family === "find_word" ? "selected" : ""}>Vocabulário: encontrar palavra</option>
-
-                        <option value="identify_verb" ${item.selected_exercise_family === "identify_verb" ? "selected" : ""}>Gramática: identificar verbo</option>
-                        <option value="reuse_verb" ${item.selected_exercise_family === "reuse_verb" ? "selected" : ""}>Gramática: usar verbo numa nova frase</option>
-                        <option value="complete_conjugation" ${item.selected_exercise_family === "complete_conjugation" ? "selected" : ""}>Gramática: completar conjugação</option>
-                        <option value="change_subject" ${item.selected_exercise_family === "change_subject" ? "selected" : ""}>Gramática: mudar sujeito</option>
-                        <option value="rewrite_plural" ${item.selected_exercise_family === "rewrite_plural" ? "selected" : ""}>Gramática: passar para o plural</option>
-
-                        <option value="what_happens" ${item.selected_exercise_family === "what_happens" ? "selected" : ""}>Compreensão: o que acontece</option>
-                        <option value="who_is_there" ${item.selected_exercise_family === "who_is_there" ? "selected" : ""}>Compreensão: quem aparece</option>
-                        <option value="what_do_you_see" ${item.selected_exercise_family === "what_do_you_see" ? "selected" : ""}>Compreensão: o que vês</option>
-
-                        <option value="describe_two_sentences" ${item.selected_exercise_family === "describe_two_sentences" ? "selected" : ""}>Produção: descrever em duas frases</option>
-                        <option value="write_one_sentence" ${item.selected_exercise_family === "write_one_sentence" ? "selected" : ""}>Produção: escrever uma frase</option>
-                        <option value="describe_freely" ${item.selected_exercise_family === "describe_freely" ? "selected" : ""}>Produção: descrição livre</option>
+                        ${buildExerciseFamilyOptions(
+                            item.selected_exercise_family || "",
+                            item.allowed_exercise_families || []
+                        )}
                     </select>
                 </div>
 
@@ -614,6 +662,30 @@ function renderDraft(draft) {
             }
         });
     });
+    document.querySelectorAll('[data-field="selected_question_pt"]').forEach(input => {
+        input.addEventListener("input", () => {
+            markDraftDirty();
+        });
+    });
+
+    document.querySelectorAll('[data-field="include_item"]').forEach(input => {
+        input.addEventListener("change", () => {
+            markDraftDirty();
+        });
+    });
+
+    document.querySelectorAll('select[data-field="selected_exercise_family"]').forEach(select => {
+        select.addEventListener("change", () => {
+            markDraftDirty();
+        });
+    });
+
+    document.getElementById("draftTitleEdit")?.addEventListener("input", markDraftDirty);
+    document.getElementById("worksheetProfileEdit")?.addEventListener("change", markDraftDirty);
+    document.getElementById("styleProfileEdit")?.addEventListener("change", markDraftDirty);
+    document.getElementById("cefrLevelEdit")?.addEventListener("change", markDraftDirty);
+    document.getElementById("ageMinEdit")?.addEventListener("input", markDraftDirty);
+    document.getElementById("ageMaxEdit")?.addEventListener("input", markDraftDirty);
 }
 
 function collectEditedItems() {
@@ -679,6 +751,8 @@ async function saveDraft() {
 
         saveStatus.innerText = "Rascunho guardado com sucesso.";
         saveBtn.disabled = false;
+        hasUnsavedChanges = false;
+        loadSavedDrafts();
     } catch (err) {
         console.error(err);
         saveStatus.innerText = "Erro ao guardar rascunho.";
@@ -706,6 +780,7 @@ async function reloadDraft() {
         currentDraft = draft;
         renderDraft(draft);
         saveStatus.innerText = "Rascunho recarregado.";
+        hasUnsavedChanges = false;
     } catch (err) {
         console.error(err);
         saveStatus.innerText = "Erro ao recarregar rascunho.";
@@ -713,8 +788,26 @@ async function reloadDraft() {
     }
 }
 
+function toggleSavedDrafts() {
+    const card = document.getElementById("savedDraftsCard");
+    const isHidden = card.classList.contains("hidden");
+
+    if (isHidden) {
+        card.classList.remove("hidden");
+        loadSavedDrafts();
+    } else {
+        card.classList.add("hidden");
+    }
+}
+
 async function generateFromDraft() {
     if (!currentDraft) return;
+    if (hasUnsavedChanges) {
+        const proceed = confirm("Há alterações por guardar. Se continuar, a ficha final será gerada a partir da última versão guardada do rascunho. Quer continuar?");
+        if (!proceed) {
+            return;
+        }
+    }
 
     const generateStatus = document.getElementById("generateStatus");
     const downloadLink = document.getElementById("draftDownloadLink");
@@ -779,6 +872,67 @@ async function pollDraftGenerationStatus(jobId) {
             generateStatus.classList.add("error");
         }
     }, 1000);
+}
+
+async function loadQuestionFamilies() {
+    try {
+        const res = await fetch("/question-families");
+        if (!res.ok) {
+            console.error("Erro ao carregar famílias de exercícios.");
+            questionFamilies = {};
+            return;
+        }
+
+        questionFamilies = await res.json();
+    } catch (err) {
+        console.error("Erro ao carregar famílias de exercícios.", err);
+        questionFamilies = {};
+    }
+}
+
+function buildExerciseFamilyOptions(selectedValue = "", allowedFamilies = null) {
+    if (!questionFamilies || Object.keys(questionFamilies).length === 0) {
+        return '<option value="">—</option>';
+    }
+
+    const allowedSet = allowedFamilies ? new Set(allowedFamilies) : null;
+    const groups = {};
+
+    for (const [familyKey, meta] of Object.entries(questionFamilies)) {
+        if (allowedSet && !allowedSet.has(familyKey)) {
+            continue;
+        }
+
+        const groupName = meta.group_pt || "Outros";
+        const label = meta.label_pt || familyKey;
+
+        if (!groups[groupName]) {
+            groups[groupName] = [];
+        }
+
+        groups[groupName].push({
+            key: familyKey,
+            label: label
+        });
+    }
+
+    const sortedGroupNames = Object.keys(groups).sort((a, b) => a.localeCompare(b, "pt"));
+
+    let html = '<option value="">—</option>';
+
+    for (const groupName of sortedGroupNames) {
+        html += `<optgroup label="${escapeHtml(groupName)}">`;
+
+        const entries = groups[groupName].sort((a, b) => a.label.localeCompare(b.label, "pt"));
+        for (const entry of entries) {
+            const selectedAttr = entry.key === selectedValue ? "selected" : "";
+            html += `<option value="${escapeHtml(entry.key)}" ${selectedAttr}>${escapeHtml(entry.label)}</option>`;
+        }
+
+        html += "</optgroup>";
+    }
+
+    return html;
 }
 
 async function regenerateQuestion(draftId, itemId, buttonEl = null) {
@@ -859,6 +1013,80 @@ async function regenerateQuestion(draftId, itemId, buttonEl = null) {
     }
 }
 
+
+async function loadSavedDrafts() {
+    const container = document.getElementById("savedDraftsContainer");
+    container.innerHTML = "A carregar...";
+
+    try {
+        const res = await fetch("/drafts");
+        if (!res.ok) {
+            container.innerHTML = '<span class="error">Erro ao carregar rascunhos.</span>';
+            return;
+        }
+
+        const drafts = await res.json();
+
+        if (!drafts.length) {
+            container.innerHTML = '<span class="muted">Ainda não existem rascunhos guardados.</span>';
+            return;
+        }
+
+        container.innerHTML = drafts.map(draft => `
+            <div class="item-card" style="margin-bottom: 10px;">
+                <div class="item-header">
+                    <div>
+                        <div class="item-title">${escapeHtml(draft.title || "Sem título")}</div>
+                        <div class="small muted">
+                            ${escapeHtml(draft.worksheet_profile_name || "—")} •
+                            ${escapeHtml(draft.updated_at || "—")}
+                        </div>
+                    </div>
+                    <button type="button" class="secondary" onclick="openDraft('${draft.draft_id}')">
+                        Abrir
+                    </button>
+                </div>
+            </div>
+        `).join("");
+    } catch (err) {
+        console.error(err);
+        container.innerHTML = '<span class="error">Erro ao carregar rascunhos.</span>';
+    }
+}
+
+async function openDraft(draftId) {
+    const saveStatus = document.getElementById("saveStatus");
+
+    if (hasUnsavedChanges) {
+        const proceed = confirm("Há alterações por guardar no rascunho atual. Se abrir outro rascunho agora, essas alterações serão perdidas. Quer continuar?");
+        if (!proceed) {
+            return;
+        }
+    }
+
+    try {
+        const res = await fetch(`/drafts/${draftId}`);
+        if (!res.ok) {
+            alert("Erro ao abrir o rascunho.");
+            return;
+        }
+
+        const draft = await res.json();
+        currentDraft = draft;
+        renderDraft(draft);
+        hasUnsavedChanges = false;
+        document.getElementById("savedDraftsCard")?.classList.add("hidden");
+
+        if (saveStatus) {
+            saveStatus.classList.remove("error");
+            saveStatus.innerText = "Rascunho carregado.";
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Erro ao abrir o rascunho.");
+    }
+}
+
 function escapeHtml(value) {
     return String(value ?? "")
         .replaceAll("&", "&amp;")
@@ -867,6 +1095,13 @@ function escapeHtml(value) {
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
 }
+
+async function initPage() {
+    await loadQuestionFamilies();
+}
+
+initPage();
+
 </script>
 </body>
 </html>

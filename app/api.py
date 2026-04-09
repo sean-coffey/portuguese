@@ -5,7 +5,7 @@ import uuid
 import shutil
 import json
 import threading
-
+from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -30,7 +30,7 @@ from app.api_models import CreateDraftFromTextRequest, SaveDraftRequest, Regener
 from app.draft_models import WorksheetDraftItem, LearnerProfile
 from app.draft_storage import create_empty_draft, save_draft, load_draft, list_local_drafts
 from app.analyzer import analyze_phrase
-from app.question_builder import build_question_for_item, QuestionBatchContext, build_question_from_family
+from app.question_builder import build_question_for_item, QuestionBatchContext, build_question_from_family, get_allowed_families_for_item
 from app.worksheet_profiles import get_worksheet_profile
 
 app = FastAPI()
@@ -64,6 +64,11 @@ def build_draft_items_from_lines(
 
         analysis = analyze_phrase(text)
 
+        allowed_families = get_allowed_families_for_item(
+            analysis,
+            learner_profile=learner_profile,
+        )
+
         suggested_exercise_family = None
         selected_exercise_family = None
         suggested_question_pt = None
@@ -91,14 +96,12 @@ def build_draft_items_from_lines(
             lexical_type=analysis.lexical_type,
             visual_type=analysis.visual_type,
             teacher_review=analysis.teacher_review,
-
             suggested_exercise_family=suggested_exercise_family,
             selected_exercise_family=selected_exercise_family,
-
             suggested_question_pt=suggested_question_pt,
             selected_question_pt=selected_question_pt,
-
             include_item=True,
+            allowed_exercise_families=allowed_families,
         )
 
         items.append(draft_item)
@@ -526,3 +529,26 @@ def regenerate_question_for_draft_item(
     save_draft(draft)
 
     return target_item
+
+
+@app.get("/drafts")
+def list_drafts(request: Request):
+    guard = require_login(request)
+    if guard:
+        return guard
+
+    return list_local_drafts()
+
+
+from pathlib import Path
+import json
+
+@app.get("/question-families")
+def get_question_families(request: Request):
+    guard = require_login(request)
+    if guard:
+        return guard
+
+    path = Path(__file__).resolve().parent / "question_families.json"
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)

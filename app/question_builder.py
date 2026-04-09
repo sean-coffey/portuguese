@@ -1,7 +1,59 @@
 from collections import defaultdict
+import json
+from pathlib import Path
+
+from openai import OpenAI
 
 from app.draft_models import LearnerProfile
-from app.models import PhraseItem
+from app.models import PhraseItem, QuestionOutput
+
+client = OpenAI()
+
+BASE_DIR = Path(__file__).resolve().parent
+
+with open(BASE_DIR / "question_rules.json", "r", encoding="utf-8") as f:
+    QUESTION_RULES = json.load(f)
+
+with open(BASE_DIR / "question_templates.json", "r", encoding="utf-8") as f:
+    QUESTION_TEMPLATES = json.load(f)
+
+with open(BASE_DIR / "question_families.json", "r", encoding="utf-8") as f:
+    QUESTION_FAMILIES = json.load(f)
+
+QUESTION_MODE_FALLBACKS = {
+    "grammar": ["grammar", "vocabulary", "production"],
+    "vocabulary": ["vocabulary", "production"],
+    "comprehension": ["comprehension", "production", "vocabulary"],
+    "production": ["production"],
+}
+
+FAMILIES_BY_MODE = {}
+
+for family_key, meta in QUESTION_FAMILIES.items():
+    mode = meta.get("question_mode")
+    if not mode:
+        continue
+
+    if isinstance(mode, list):
+        for mode_name in mode:
+            FAMILIES_BY_MODE.setdefault(mode_name, set()).add(family_key)
+    else:
+        FAMILIES_BY_MODE.setdefault(mode, set()).add(family_key)
+
+
+def _get_families_for_mode(question_mode: str) -> set[str]:
+    return FAMILIES_BY_MODE.get(question_mode, set())
+
+def _get_family_meta(exercise_family: str) -> dict:
+    return QUESTION_FAMILIES.get(exercise_family, {})
+
+
+def _family_is_llm_backed(exercise_family: str) -> bool:
+    return bool(_get_family_meta(exercise_family).get("llm_backed", False))
+
+
+def _get_llm_strategy(exercise_family: str) -> str | None:
+    return _get_family_meta(exercise_family).get("llm_strategy")
 
 
 class QuestionBatchContext:
@@ -39,33 +91,16 @@ def _subject(item: PhraseItem) -> str | None:
     return item.subject_pt
 
 
-def allowed_grammar_families(item: PhraseItem, learner_profile: LearnerProfile) -> list[str]:
+def _learner_descriptor(learner_profile: LearnerProfile) -> str:
     level = learner_profile.cefr_level
+    age_min = learner_profile.age_min
+    age_max = learner_profile.age_max
 
-    if level == "A1":
-        families = ["identify_verb", "reuse_verb", "complete_conjugation"]
-    elif level == "A2":
-        families = ["identify_verb", "reuse_verb", "complete_conjugation", "change_subject"]
-    elif level in {"B1", "B2"}:
-        families = ["identify_verb", "reuse_verb", "complete_conjugation", "change_subject", "rewrite_plural"]
-    else:
-        families = ["identify_verb"]
-
-    valid = []
-
-    for family in families:
-        if family == "identify_verb" and item.main_verb_surface_pt:
-            valid.append(family)
-        elif family == "reuse_verb" and item.main_verb_infinitive_pt:
-            valid.append(family)
-        elif family == "complete_conjugation" and item.main_verb_infinitive_pt:
-            valid.append(family)
-        elif family == "change_subject" and item.subject_pt:
-            valid.append(family)
-        elif family == "rewrite_plural" and item.number_pt == "singular":
-            valid.append(family)
-
-    return valid or ["identify_verb"]
+    if age_min and age_max:
+        return f"{level}, {age_min}-{age_max} years old"
+    if age_min:
+        return f"{level}, {age_min}+ years old"
+    return level
 
 
 def learner_is_younger(learner_profile: LearnerProfile) -> bool:
@@ -77,211 +112,374 @@ def simplify_instruction(text: str, learner_profile: LearnerProfile) -> str:
         replacements = {
             "utilizar": "usar",
             "reescreve": "escreve de novo",
-            "adapta o verbo": "muda o verbo",
+            "adapta o verbo": "muda o verbo"
         }
         for old, new in replacements.items():
             text = text.replace(old, new)
     return text
 
 
-def _build_grammar_question(
-    item: PhraseItem,
-    family: str,
-    learner_profile: LearnerProfile,
-) -> tuple[str, str | None]:
-    infinitive = item.main_verb_infinitive_pt or item.verb_pt
-    surface = item.main_verb_surface_pt or item.verb_pt
+def _classify_item(item: PhraseItem) -> str:
+    if item.input_type == "word":
+        lexical = (item.lexical_type or "other").lower()
+        if lexical in {"noun", "adjective", "verb"}:
+            return lexical
+        return "other"
+
+    visual = item.visual_type or "literal_visual"
+
+    if visual in {"literal_visual", "literal_but_ambiguous"}:
+        return "literal"
+    if visual == "idiomatic":
+        return "idiom"
+    return "non_visual"
+
+
+def _get_rule_entry(category: str) -> dict:
+    return QUESTION_RULES.get(category, {})
+
+
+def _family_is_structurally_valid(item: PhraseItem, family: str) -> bool:
+    if family == "sem_pergunta":
+        return True
 
     if family == "identify_verb":
-        templates = [
-            "Identifica o verbo nesta frase.",
-            f'Qual é o verbo na frase "{item.normalized}"?',
-            "Assinala o verbo da frase.",
-        ]
-        question = templates[abs(hash(item.id)) % len(templates)]
-        return simplify_instruction(question, learner_profile), surface
+        return bool(_main_verb_surface(item)) or (
+            item.input_type == "word" and item.lexical_type == "verb"
+        )
 
-    if family == "reuse_verb" and infinitive:
-        templates = [
-            f'Escreve outra frase a utilizar o verbo "{infinitive}".',
-            f'Escreve uma nova frase com o verbo "{infinitive}".',
-            f'Usa o verbo "{infinitive}" numa frase diferente.',
-        ]
-        question = templates[abs(hash(item.id)) % len(templates)]
-        return simplify_instruction(question, learner_profile), infinitive
-
-    if family == "complete_conjugation" and infinitive:
-        templates = [
-            "Completa a frase: Eu _____ no parque. Usa o verbo da frase acima e tem atenção à conjugação.",
-            "Completa a frase com o verbo da frase acima: Nós _____ no parque.",
-            f'Completa a frase usando o verbo "{infinitive}": Eles _____ todos os dias.',
-        ]
-        question = templates[abs(hash(item.id)) % len(templates)]
-        return simplify_instruction(question, learner_profile), infinitive
+    if family in {"reuse_verb", "complete_conjugation"}:
+        return bool(_main_verb_infinitive(item))
 
     if family == "change_subject":
-        templates = [
-            'Substitui o sujeito por "eles" e reescreve a frase.',
-            'Troca o sujeito por "nós" e adapta o verbo.',
-            "Muda o sujeito da frase e ajusta o verbo corretamente.",
-        ]
-        question = templates[abs(hash(item.id)) % len(templates)]
-        return simplify_instruction(question, learner_profile), None
+        return bool(_subject(item)) and item.input_type in {"phrase", "sentence"}
 
     if family == "rewrite_plural":
-        templates = [
-            "Reescreve a frase no plural.",
-            "Passa a frase para o plural.",
-            "Transforma a frase para que o sujeito fique no plural.",
-        ]
-        question = templates[abs(hash(item.id)) % len(templates)]
-        return simplify_instruction(question, learner_profile), None
+        return bool(_subject(item)) and item.number_pt == "singular" and item.input_type in {"phrase", "sentence"}
 
-    return simplify_instruction("Identifica o verbo na frase.", learner_profile), surface
+    if family in {"meaning", "use_in_sentence", "write_one_sentence", "describe_freely"}:
+        return True
 
+    if family in {"find_word", "what_happens", "who_is_there", "what_do_you_see", "describe_two_sentences"}:
+        return item.input_type in {"phrase", "sentence"}
 
-def _build_vocabulary_question(item: PhraseItem) -> tuple[str, str | None, str]:
-    keyword = _pick_keyword(item)
-    focus = _pick_focus_phrase(item)
-
-    families = [
-        "meaning",
-        "use_in_sentence",
-        "find_word",
-    ]
-    family = families[abs(hash(item.id)) % len(families)]
-
-    if family == "meaning":
-        return f'O que significa a palavra "{keyword}"?', item.gloss_en, family
-
-    if family == "use_in_sentence":
-        return f'Escreve uma frase com a palavra "{keyword}".', None, family
-
-    return f'Encontra na frase a palavra ou expressão "{focus}".', focus, family
+    return True
 
 
-def _build_comprehension_question(item: PhraseItem) -> tuple[str, str | None, str]:
-    families = [
-        "what_happens",
-        "who_is_there",
-        "what_do_you_see",
-    ]
-    family = families[abs(hash(item.id)) % len(families)]
+def _filter_families_by_structure(item: PhraseItem, families: list[str]) -> list[str]:
+    return [family for family in families if _family_is_structurally_valid(item, family)]
 
-    if family == "what_happens":
-        return "O que está a acontecer na imagem?", item.scene.action if item.scene else None, family
+def _get_families_for_mode(question_mode: str) -> set[str]:
+    return FAMILIES_BY_MODE.get(question_mode, set())
 
-    if family == "who_is_there":
-        return "Quem aparece na imagem?", item.scene.subject if item.scene else None, family
+def _get_candidate_families(
+    item: PhraseItem,
+    learner_profile: LearnerProfile,
+    question_mode: str,
+) -> tuple[list[str], list[str]]:
+    category = _classify_item(item)
+    rule = _get_rule_entry(category)
 
-    return "O que vês nesta imagem?", None, family
+    allowed = rule.get("allowed_families", [])
+    preferred = rule.get("cefr_preferred_families", {}).get(
+        learner_profile.cefr_level,
+        rule.get("preferred_families", [])
+    )
+
+    allowed_for_mode = _get_families_for_mode(question_mode)
+
+    allowed = [f for f in allowed if f in allowed_for_mode]
+    preferred = [f for f in preferred if f in allowed_for_mode]
+
+    allowed = _filter_families_by_structure(item, allowed)
+    preferred = _filter_families_by_structure(item, preferred)
+
+    return preferred, allowed
+
+def _get_mode_families_for_item(
+    item: PhraseItem,
+    learner_profile: LearnerProfile,
+    question_mode: str,
+) -> tuple[list[str], list[str]]:
+    preferred, allowed = _get_candidate_families(
+        item=item,
+        learner_profile=learner_profile,
+        question_mode=question_mode
+    )
+    return preferred, allowed
 
 
-def _build_production_question(item: PhraseItem) -> tuple[str, str | None, str]:
-    families = [
-        "describe_two_sentences",
-        "write_one_sentence",
-        "describe_freely",
-    ]
-    family = families[abs(hash(item.id)) % len(families)]
+def _choose_exercise_family(
+    item: PhraseItem,
+    question_mode: str,
+    learner_profile: LearnerProfile,
+    batch_context: QuestionBatchContext | None = None
+) -> str:
+    modes_to_try = QUESTION_MODE_FALLBACKS.get(question_mode, [question_mode])
 
-    if family == "describe_two_sentences":
-        return "Descreve a imagem em duas frases.", None, family
+    for mode in modes_to_try:
+        preferred, allowed = _get_mode_families_for_item(
+            item=item,
+            learner_profile=learner_profile,
+            question_mode=mode,
+        )
 
-    if family == "write_one_sentence":
-        return "Escreve uma frase sobre esta imagem.", None, family
+        candidates = preferred or allowed
 
-    return "Observa a imagem e escreve o que está a acontecer.", None, family
+        if candidates:
+            if batch_context:
+                return batch_context.choose_least_used(candidates)
+            return candidates[0]
+
+    return ""
+
+def _build_template_question_for_family(
+    item: PhraseItem,
+    exercise_family: str,
+    learner_profile: LearnerProfile,
+) -> tuple[str, str | None]:
+    if exercise_family == "identify_verb":
+        if item.input_type == "word" and item.lexical_type == "verb":
+            template = _pick_template("identify_verb", "word_verb", item.id)
+        else:
+            template = _pick_template("identify_verb", "default", item.id)
+
+        question = _render_template(template, item)
+        return simplify_instruction(question, learner_profile), _main_verb_surface(item)
+
+    if exercise_family in QUESTION_TEMPLATES:
+        template = _pick_template(exercise_family, "default", item.id)
+        question = _render_template(template, item)
+
+        answer = None
+        if exercise_family == "meaning":
+            answer = item.gloss_en
+        elif exercise_family == "find_word":
+            answer = _pick_focus_phrase(item)
+        elif exercise_family == "what_happens":
+            answer = item.scene.action if item.scene else None
+        elif exercise_family == "who_is_there":
+            answer = item.scene.subject if item.scene else None
+
+        return simplify_instruction(question, learner_profile), answer
+
+    return "", None
+
+def _build_llm_question_for_family(
+    item: PhraseItem,
+    exercise_family: str,
+    learner_profile: LearnerProfile,
+) -> tuple[str, str | None]:
+    strategy = _get_llm_strategy(exercise_family)
+
+    if strategy == "reuse_verb":
+        return _build_reuse_verb_question_llm(item, learner_profile)
+
+    if strategy == "complete_conjugation":
+        return _build_complete_conjugation_question_llm(item, learner_profile)
+
+    return "", None
+
+
+def _pick_template(family: str, template_key: str, item_id: str) -> str:
+    templates = QUESTION_TEMPLATES.get(family, {}).get(template_key, [])
+    if not templates:
+        return ""
+    return templates[abs(hash(item_id)) % len(templates)]
+
+
+def _render_template(template: str, item: PhraseItem) -> str:
+    return template.format(
+        normalized=item.normalized,
+        keyword=_pick_keyword(item),
+        focus=_pick_focus_phrase(item)
+    )
+
+
+def _build_complete_conjugation_question_llm(
+    item: PhraseItem,
+    learner_profile: LearnerProfile
+) -> tuple[str, str | None]:
+    infinitive = _main_verb_infinitive(item)
+
+    if not infinitive:
+        return "Identifica o verbo na frase.", _main_verb_surface(item)
+
+    try:
+        completion = client.beta.chat.completions.parse(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You create short European Portuguese worksheet exercises for young learners. "
+                        "Generate one fill-in-the-blank sentence that uses the SAME target verb as the source phrase, "
+                        "but in a NEW context that makes natural semantic sense. "
+                        "If the source input is a single verb in the infinitive, create a natural fill-in-the-blank sentence "
+                        "that uses that verb in a suitable context. "
+                        "Do not refer to the source as if it were a full sentence. "
+                        "Requirements: "
+                        "Use European Portuguese. "
+                        "Keep the sentence simple and age-appropriate. "
+                        "The sentence must be natural and plausible. "
+                        "Include exactly one blank written as _____. "
+                        "Do not repeat the original phrase too closely unless necessary. "
+                        "Do not produce a context that clashes with the meaning of the verb. "
+                        "Return a worksheet-style instruction sentence in Portuguese and the expected conjugated answer."
+                    )
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        f'Source input: "{item.normalized}"\n'
+                        f'Input type: "{item.input_type or ""}"\n'
+                        f'Lexical type: "{item.lexical_type or ""}"\n'
+                        f'Target verb infinitive: "{infinitive}"\n'
+                        f'English gloss: "{item.gloss_en or ""}"\n'
+                        f'Learner profile: {_learner_descriptor(learner_profile)}\n\n'
+                        "Return:\n"
+                        '- question_pt: start with "Completa a frase com o verbo da frase acima:" followed by a natural sentence with one blank\n'
+                        "- answer_pt: the expected conjugated answer for the blank\n"
+                    )
+                }
+            ],
+            response_format=QuestionOutput
+        )
+
+        parsed = completion.choices[0].message.parsed
+        question_pt = (parsed.question_pt or "").strip()
+        answer_pt = (parsed.answer_pt or "").strip() or None
+
+        if not question_pt or "_____" not in question_pt:
+            return f'Escreve uma nova frase com o verbo "{infinitive}".', infinitive
+
+        return question_pt, answer_pt
+
+    except Exception as e:
+        print(f"[QUESTION LLM ERROR] complete_conjugation item={item.normalized!r} error={e}")
+        return f'Escreve uma nova frase com o verbo "{infinitive}".', infinitive
+
+
+def _build_reuse_verb_question_llm(
+    item: PhraseItem,
+    learner_profile: LearnerProfile
+) -> tuple[str, str | None]:
+    infinitive = _main_verb_infinitive(item)
+
+    if not infinitive:
+        return "Identifica o verbo nesta frase.", _main_verb_surface(item)
+
+    try:
+        completion = client.beta.chat.completions.parse(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You create short European Portuguese worksheet exercises for young learners. "
+                        "Write one natural worksheet instruction asking the learner to create a NEW sentence "
+                        "using the same target verb as the source phrase. "
+                        "Requirements: "
+                        "Use European Portuguese. "
+                        "Keep it short, clear, and age-appropriate. "
+                        "Do not add multiple tasks. "
+                        "Do not use unnatural wording."
+                    )
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        f'Source phrase: "{item.normalized}"\n'
+                        f'Target verb infinitive: "{infinitive}"\n'
+                        f'Learner profile: {_learner_descriptor(learner_profile)}\n\n'
+                        "Return:\n"
+                        "- question_pt: one instruction in Portuguese\n"
+                        "- answer_pt: null\n"
+                    )
+                }
+            ],
+            response_format=QuestionOutput
+        )
+
+        parsed = completion.choices[0].message.parsed
+        question_pt = (parsed.question_pt or "").strip()
+
+        if not question_pt:
+            return f'Escreve uma nova frase com o verbo "{infinitive}".', None
+
+        return question_pt, None
+
+    except Exception as e:
+        print(f"[QUESTION LLM ERROR] reuse_verb item={item.normalized!r} error={e}")
+        return f'Escreve uma nova frase com o verbo "{infinitive}".', None
+
+
+def _build_question_for_family(
+    item: PhraseItem,
+    exercise_family: str,
+    learner_profile: LearnerProfile
+) -> tuple[str, str | None]:
+    if not exercise_family or exercise_family == "sem_pergunta":
+        return "", None
+
+    if _family_is_llm_backed(exercise_family):
+        return _build_llm_question_for_family(
+            item=item,
+            exercise_family=exercise_family,
+            learner_profile=learner_profile
+        )
+
+    return _build_template_question_for_family(
+        item=item,
+        exercise_family=exercise_family,
+        learner_profile=learner_profile
+    )
 
 
 def build_question_for_item(
     item: PhraseItem,
     question_mode: str,
     learner_profile: LearnerProfile,
-    batch_context: QuestionBatchContext | None = None,
+    batch_context: QuestionBatchContext | None = None
 ) -> tuple[str, str | None, str]:
-    """
-    Returns:
-        (question_pt, answer_pt, exercise_family)
-    """
+    family = _choose_exercise_family(
+        item=item,
+        question_mode=question_mode,
+        learner_profile=learner_profile,
+        batch_context=batch_context
+    )
 
-    if question_mode == "grammar":
-        candidates = allowed_grammar_families(item, learner_profile)
+    if not family:
+        return "", None, ""
 
-        if batch_context:
-            family = batch_context.choose_least_used(candidates)
-        else:
-            family = candidates[0]
+    question, answer = _build_question_for_family(
+        item=item,
+        exercise_family=family,
+        learner_profile=learner_profile
+    )
 
-        question, answer = _build_grammar_question(item, family, learner_profile)
-        return question, answer, family
+    return question, answer, family
 
-    if question_mode == "vocabulary":
-        question, answer, family = _build_vocabulary_question(item)
-        if batch_context:
-            batch_context.family_counts[family] += 1
-        return question, answer, family
+def get_allowed_families_for_item(
+    item: PhraseItem,
+    learner_profile: LearnerProfile,
+) -> list[str]:
+    category = _classify_item(item)
+    rule = _get_rule_entry(category)
 
-    if question_mode == "comprehension":
-        question, answer, family = _build_comprehension_question(item)
-        if batch_context:
-            batch_context.family_counts[family] += 1
-        return question, answer, family
+    allowed = rule.get("allowed_families", [])
+    allowed = _filter_families_by_structure(item, allowed)
 
-    if question_mode == "production":
-        question, answer, family = _build_production_question(item)
-        if batch_context:
-            batch_context.family_counts[family] += 1
-        return question, answer, family
-
-    return "", None, ""
+    return allowed
 
 
 def build_question_from_family(
     item: PhraseItem,
     exercise_family: str,
-    learner_profile: LearnerProfile,
+    learner_profile: LearnerProfile
 ) -> tuple[str, str | None]:
-    if exercise_family == "meaning":
-        keyword = _pick_keyword(item)
-        return f'O que significa a palavra "{keyword}"?', item.gloss_en
-
-    if exercise_family == "use_in_sentence":
-        keyword = _pick_keyword(item)
-        return f'Escreve uma frase com a palavra "{keyword}".', None
-
-    if exercise_family == "find_word":
-        focus = _pick_focus_phrase(item)
-        return f'Encontra na frase a palavra ou expressão "{focus}".', focus
-
-    if exercise_family in {
-        "identify_verb",
-        "reuse_verb",
-        "complete_conjugation",
-        "change_subject",
-        "rewrite_plural",
-    }:
-        return _build_grammar_question(item, exercise_family, learner_profile)
-
-    if exercise_family == "what_happens":
-        return "O que está a acontecer na imagem?", item.scene.action if item.scene else None
-
-    if exercise_family == "who_is_there":
-        return "Quem aparece na imagem?", item.scene.subject if item.scene else None
-
-    if exercise_family == "what_do_you_see":
-        return "O que vês nesta imagem?", None
-
-    if exercise_family == "describe_two_sentences":
-        return "Descreve a imagem em duas frases.", None
-
-    if exercise_family == "write_one_sentence":
-        return "Escreve uma frase sobre esta imagem.", None
-
-    if exercise_family == "describe_freely":
-        return "Observa a imagem e escreve o que está a acontecer.", None
-
-    if exercise_family == "sem_pergunta":
-        return "", None
-
-    return "", None
+    return _build_question_for_family(
+        item=item,
+        exercise_family=exercise_family,
+        learner_profile=learner_profile
+    )

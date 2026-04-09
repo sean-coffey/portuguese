@@ -39,6 +39,8 @@ class WorksheetDraftItem(BaseModel):
     image_status: Optional[str] = None
     image_path: Optional[str] = None
 
+    allowed_exercise_families: list[str] = Field(default_factory=list)
+
 
 class WorksheetDraft(BaseModel):
     draft_id: str
